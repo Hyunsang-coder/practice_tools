@@ -5,7 +5,7 @@ import useWhisper from '../hooks/useWhisper';
 import './PracticePage.css';
 
 // Rolling highlight component for sight translation
-const RollingText = ({ text, speed, isPlaying, onComplete }) => {
+const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [words, setWords] = useState([]);
   const intervalRef = useRef(null);
@@ -39,6 +39,10 @@ const RollingText = ({ text, speed, isPlaying, onComplete }) => {
           if (next >= words.length) {
             onComplete();
             return prev;
+          }
+          // Update progress percentage
+          if (onProgress) {
+            onProgress(Math.round((next / words.length) * 100));
           }
           return next;
         });
@@ -97,12 +101,11 @@ const RollingText = ({ text, speed, isPlaying, onComplete }) => {
     <div className="rolling-text">
       <div className="text-content" ref={textContentRef}>
         {getHighlightedText()}
-      </div>
-      <div className="progress-bar">
-        <div
-          className="progress-fill"
-          style={{ width: `${(currentIndex / words.length) * 100}%` }}
-        />
+        {onProgress && (
+          <div className="progress-indicator">
+            {Math.round((currentIndex / words.length) * 100)}%
+          </div>
+        )}
       </div>
     </div>
   );
@@ -118,6 +121,7 @@ function PracticePage() {
   const [mediaUrl, setMediaUrl] = useState(null);
   const [currentSpeed, setCurrentSpeed] = useState(practiceData?.speed || 1.0);
   const [restartKey, setRestartKey] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);
@@ -165,6 +169,7 @@ function PracticePage() {
   const handleRestart = useCallback(() => {
     setIsCompleted(false);
     setIsPlaying(false);
+    setProgress(0);
     // 재시작을 위해 키를 변경하여 RollingText 컴포넌트를 리셋
     setRestartKey(prev => prev + 1);
   }, []);
@@ -283,6 +288,7 @@ function PracticePage() {
               speed={100 * currentSpeed}
               isPlaying={isPlaying}
               onComplete={handleSightTranslationComplete}
+              onProgress={setProgress}
             />
           ) : (
             <div className="media-player">

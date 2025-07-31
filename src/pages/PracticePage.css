@@ -118,6 +118,7 @@
   justify-content: center;
   text-align: center;
   padding: 5rem 8rem;
+  position: relative;
 }
 
 .text-wrapper {
@@ -127,6 +128,21 @@
   width: 100%;
   display: block;
   color: #b0b5bd;
+}
+
+.progress-indicator {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
 
 
@@ -465,6 +481,7 @@
     justify-content: center;
     text-align: center;
     overflow: hidden;
+    position: relative;
   }
 
   .text-wrapper {
@@ -487,5 +504,12 @@
 
   .speed-markers {
     max-width: 100%;
+  }
+
+  .progress-indicator {
+    bottom: 0.5rem;
+    right: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
