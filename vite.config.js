@@ -11,10 +11,14 @@ export default defineConfig(({ command }) => {
         generateScopedName: '[name]__[local]___[hash:base64:5]',
       },
     },
+    server: {
+      // SPA 라우팅을 위한 폴백 설정
+      historyApiFallback: true,
+    },
   };
 
   if (command === 'build') {
-    config.base = '/interpretation_tools/';
+    config.base = '/practice_tools/'; // GitHub Pages 레포 이름에 맞춤
   }
 
   return config;

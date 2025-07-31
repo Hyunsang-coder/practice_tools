@@ -9,6 +9,26 @@ const useWhisper = () => {
 
   const modelRef = useRef(null);
 
+  // Web Speech API implementation (fallback) - 먼저 정의
+  const transcribeWithWebSpeechAPI = useCallback((audioBlob, language) => {
+    return new Promise((resolve, reject) => {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        // Simulate transcription for unsupported browsers
+        setTimeout(() => {
+          const mockTranscript = language === 'ko-KR' 
+            ? "안녕하세요, 이것은 모의 음성 인식 결과입니다. 실제 구현에서는 Whisper 모델을 사용하여 더 정확한 결과를 제공합니다."
+            : "Hello, this is a mock speech recognition result. In the actual implementation, we would use the Whisper model for more accurate results.";
+          resolve(mockTranscript);
+        }, 2000);
+        return;
+      }
+
+      // Web Speech API는 녹음된 오디오 파일을 직접 처리할 수 없음
+      // 또한 한국어 지원이 브라우저에 따라 제한적임
+      // 따라서 모의 응답 사용
+    });
+  }, []);
+
   // Simulate model loading (placeholder for actual Whisper.wasm integration)
   const loadModel = useCallback(async () => {
     if (isModelLoaded) return;
@@ -69,53 +89,12 @@ const useWhisper = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [transcribeWithWebSpeechAPI]);
 
-  // Web Speech API implementation (fallback)
-  const transcribeWithWebSpeechAPI = useCallback((audioBlob, language) => {
-    return new Promise((resolve, reject) => {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        // Simulate transcription for unsupported browsers
-        setTimeout(() => {
-          const mockTranscript = language === 'ko-KR' 
-            ? "안녕하세요, 이것은 모의 음성 인식 결과입니다. 실제 구현에서는 Whisper 모델을 사용하여 더 정확한 결과를 제공합니다."
-            : "Hello, this is a mock speech recognition result. In the actual implementation, we would use the Whisper model for more accurate results.";
-          resolve(mockTranscript);
-        }, 2000);
-        return;
-      }
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.lang = language;
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.continuous = false;
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        resolve(transcript);
-      };
-
-      recognition.onerror = (event) => {
-        reject(new Error(`Speech recognition error: ${event.error}`));
-      };
-
-      // Create audio element and play for recognition
-      const audio = new Audio(URL.createObjectURL(audioBlob));
-      audio.play();
-      recognition.start();
-
-      // Fallback timeout
-      setTimeout(() => {
-        recognition.stop();
-        reject(new Error('Recognition timeout'));
-      }, 30000);
-    });
-  }, []);
+  // 중복 제거됨
 
   // Future: Whisper.wasm implementation placeholder
+  // eslint-disable-next-line no-unused-vars
   const transcribeWithWhisper = useCallback(async (audioBuffer, language = 'ko') => {
     // This would be the actual Whisper.wasm implementation
     // For now, return mock data

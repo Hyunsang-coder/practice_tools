@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useRecorder from '../hooks/useRecorder';
-import useWhisper from '../hooks/useWhisper';
+// useWhisper는 ResultsPage에서만 사용
 import ConfirmDialog from '../components/ConfirmDialog';
 import styles from './PracticePage.module.css';
 
@@ -38,12 +38,7 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
         setCurrentIndex(prev => {
           const next = prev + 1;
           if (next >= words.length) {
-            onComplete();
             return prev;
-          }
-          // Update progress percentage
-          if (onProgress) {
-            onProgress(Math.round((next / words.length) * 100));
           }
           return next;
         });
@@ -60,7 +55,18 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPlaying, words, speed, onComplete]);
+  }, [isPlaying, words, speed]);
+
+  // 진행률 및 완료 상태 처리를 별도 useEffect로 분리
+  useEffect(() => {
+    if (currentIndex >= words.length && words.length > 0) {
+      if (onComplete) {
+        onComplete();
+      }
+    } else if (onProgress && words.length > 0) {
+      onProgress(Math.round((currentIndex / words.length) * 100));
+    }
+  }, [currentIndex, words.length, onComplete, onProgress]);
 
   const getHighlightedText = () => {
     // 현재 단어 주변의 일정 범위만 표시 (윈도우 방식)
@@ -124,6 +130,7 @@ function PracticePage() {
   const [restartKey, setRestartKey] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [enableRecording, setEnableRecording] = useState(true); // 녹음 활성화 상태
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);
@@ -135,16 +142,11 @@ function PracticePage() {
     error: recordingError,
     startRecording,
     stopRecording,
-    resetRecording,
+    // resetRecording, // 사용하지 않음
     getAudioUrl
   } = useRecorder();
 
-  const {
-    isLoading: isTranscribing,
-    transcript,
-    transcribeAudio,
-    clearTranscript
-  } = useWhisper();
+  // useWhisper 훅은 ResultsPage에서만 사용
 
   // Initialize media for simultaneous interpretation
   useEffect(() => {
@@ -176,6 +178,31 @@ function PracticePage() {
     setRestartKey(prev => prev + 1);
   }, []);
 
+  // 연습 시작 함수 (녹음 체크박스 상태에 따라 처리)
+  const handleStartPractice = useCallback(async () => {
+    try {
+      if (enableRecording && !isRecording) {
+        await startRecording();
+      }
+      
+      // 연습 시작
+      if (practiceData?.mode === 'sight-translation') {
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error starting practice:', error);
+      alert('연습 시작 중 오류가 발생했습니다.');
+    }
+  }, [enableRecording, isRecording, startRecording, practiceData?.mode]);
+
+  // 연습 중지 함수
+  const handleStopPractice = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    }
+    setIsPlaying(false);
+  }, [isRecording, stopRecording]);
+
   const handlePlayPause = useCallback(() => {
     if (isCompleted) {
       // 완료된 상태에서는 재시작
@@ -194,9 +221,14 @@ function PracticePage() {
         setIsPlaying(!isPlaying);
       }
     } else {
-      setIsPlaying(!isPlaying);
+      // 시역 연습의 경우 handleStartPractice/handleStopPractice 사용
+      if (isPlaying) {
+        handleStopPractice();
+      } else {
+        handleStartPractice();
+      }
     }
-  }, [isPlaying, practiceData?.mode, isCompleted, handleRestart]);
+  }, [isPlaying, practiceData?.mode, isCompleted, handleRestart, handleStartPractice, handleStopPractice]);
 
   const handleMediaLoadedMetadata = useCallback(() => {
     const mediaElement = videoRef.current || audioRef.current;
@@ -210,13 +242,34 @@ function PracticePage() {
     setIsCompleted(true);
   }, []);
 
-  const handleRecordingToggle = useCallback(async () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      await startRecording();
-    }
-  }, [isRecording, startRecording, stopRecording]);
+  // finishPractice를 먼저 정의 (호이스팅 문제 해결)
+  const finishPractice = useCallback(async () => {
+    console.log('finishPractice - audioData 상태:', {
+      hasAudioData: !!audioData,
+      audioSize: audioData?.size,
+      audioType: audioData?.type
+    });
+
+    const resultsData = {
+      mode: practiceData?.mode,
+      originalText: practiceData?.text || practiceData?.originalScript || '',
+      userTranscript: '', // 빈 문자열로 시작, ResultsPage에서 transcribe
+      audioUrl: audioData ? getAudioUrl() : null,
+      audioData: audioData, // 원본 audioData 전달
+      practiceSettings: {
+        speed: practiceData?.speed || practiceData?.playbackSpeed,
+        duration: recordingTime
+      }
+    };
+
+    console.log('finishPractice - resultsData:', {
+      hasAudioUrl: !!resultsData.audioUrl,
+      hasAudioData: !!resultsData.audioData,
+      mode: resultsData.mode
+    });
+
+    navigate('/results', { state: resultsData });
+  }, [audioData, practiceData, getAudioUrl, recordingTime, navigate]);
 
   const handleFinishPractice = useCallback(async () => {
     // 진행률이 100%가 아닐 때만 확인 팝업 표시
@@ -226,28 +279,7 @@ function PracticePage() {
     }
 
     await finishPractice();
-  }, [progress]);
-
-  const finishPractice = useCallback(async () => {
-    let userTranscript = '';
-
-    if (audioData) {
-      userTranscript = await transcribeAudio(audioData, 'ko-KR');
-    }
-
-    const resultsData = {
-      mode: practiceData?.mode,
-      originalText: practiceData?.text || practiceData?.originalScript || '',
-      userTranscript,
-      audioUrl: audioData ? getAudioUrl() : null,
-      practiceSettings: {
-        speed: practiceData?.speed || practiceData?.playbackSpeed,
-        duration: recordingTime
-      }
-    };
-
-    navigate('/results', { state: resultsData });
-  }, [audioData, transcribeAudio, practiceData, getAudioUrl, recordingTime, navigate]);
+  }, [progress, finishPractice]);
 
   const handleConfirmFinish = useCallback(() => {
     setShowConfirmDialog(false);
@@ -355,30 +387,37 @@ function PracticePage() {
             </div>
           )}
 
+          <div className={styles.recordingControl}>
+            <label className={styles.recordingCheckbox}>
+              <input
+                type="checkbox"
+                checked={enableRecording}
+                onChange={(e) => setEnableRecording(e.target.checked)}
+                disabled={isPlaying}
+              />
+              <span className={styles.checkboxLabel}>
+                🎙️ 녹음하면서 연습하기
+              </span>
+            </label>
+          </div>
+
           <div className={styles.controlButtons}>
             {practiceData.mode === 'sight-translation' && (
               <button
                 className={styles.playPauseButton}
                 onClick={handlePlayPause}
               >
-                {isCompleted ? '🔄 다시 재생' : isPlaying ? '⏸️ 일시정지' : '▶️ 재생'}
+                {isCompleted ? '🔄 다시 연습' : isPlaying ? '⏸️ 일시정지' : '🏁 연습 시작'}
               </button>
             )}
 
-            <button
-              className={`${styles.recordButton} ${isRecording ? styles.recording : ''}`}
-              onClick={handleRecordingToggle}
-              disabled={isTranscribing}
-            >
-              {isRecording ? '⏹️ 녹음 중지' : '🎙️ 녹음 시작'}
-            </button>
 
             <button
               className={styles.finishButton}
               onClick={handleFinishPractice}
-              disabled={isTranscribing || isPlaying}
+              disabled={isPlaying}
             >
-              {isTranscribing ? '처리 중...' : '연습 완료'}
+              연습 완료
             </button>
           </div>
 
@@ -391,7 +430,6 @@ function PracticePage() {
           {audioData && (
             <div className={styles.recordingInfo}>
               <p>✅ 녹음 완료 ({recordingTime})</p>
-              <audio src={getAudioUrl()} controls />
             </div>
           )}
         </div>
