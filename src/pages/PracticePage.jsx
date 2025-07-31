@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useRecorder from '../hooks/useRecorder';
 import useWhisper from '../hooks/useWhisper';
+import ConfirmDialog from '../components/ConfirmDialog';
 import './PracticePage.css';
 
 // Rolling highlight component for sight translation
@@ -122,6 +123,7 @@ function PracticePage() {
   const [currentSpeed, setCurrentSpeed] = useState(practiceData?.speed || 1.0);
   const [restartKey, setRestartKey] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);
@@ -217,14 +219,16 @@ function PracticePage() {
   }, [isRecording, startRecording, stopRecording]);
 
   const handleFinishPractice = useCallback(async () => {
-    // 재생 중일 때 확인 팝업 표시
-    if (isPlaying) {
-      const confirmed = window.confirm('현재 재생 중입니다. 정말로 연습을 완료하시겠습니까?');
-      if (!confirmed) {
-        return;
-      }
+    // 진행률이 100%가 아닐 때만 확인 팝업 표시
+    if (progress < 100) {
+      setShowConfirmDialog(true);
+      return;
     }
 
+    await finishPractice();
+  }, [progress]);
+
+  const finishPractice = useCallback(async () => {
     let userTranscript = '';
 
     if (audioData) {
@@ -243,7 +247,12 @@ function PracticePage() {
     };
 
     navigate('/results', { state: resultsData });
-  }, [audioData, transcribeAudio, practiceData, getAudioUrl, recordingTime, navigate, isPlaying]);
+  }, [audioData, transcribeAudio, practiceData, getAudioUrl, recordingTime, navigate]);
+
+  const handleConfirmFinish = useCallback(() => {
+    setShowConfirmDialog(false);
+    finishPractice();
+  }, [finishPractice]);
 
   if (!practiceData) {
     return (
@@ -367,7 +376,7 @@ function PracticePage() {
             <button
               className="finish-button"
               onClick={handleFinishPractice}
-              disabled={isTranscribing}
+              disabled={isTranscribing || isPlaying}
             >
               {isTranscribing ? '처리 중...' : '연습 완료'}
             </button>
@@ -387,6 +396,14 @@ function PracticePage() {
           )}
         </div>
       </main>
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        message="아직 연습이 완료되지 않았습니다. 정말로 연습을 완료하시겠습니까?"
+        onConfirm={handleConfirmFinish}
+        onCancel={() => setShowConfirmDialog(false)}
+        confirmText="완료"
+        cancelText="취소"
+      />
     </div>
   );
 }

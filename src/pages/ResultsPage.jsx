@@ -29,11 +29,6 @@ ${originalText || '원본 텍스트가 없습니다.'}
 === 통역 결과 ===
 ${userTranscript || '통역 결과가 없습니다.'}
 
-=== 분석 ===
-원본 글자 수: ${originalText?.length || 0}
-통역 글자 수: ${userTranscript?.length || 0}
-완성도: ${userTranscript ? Math.round((userTranscript.length / (originalText?.length || 1)) * 100) : 0}%
-
 ---
 Interpreter's Playground에서 생성됨
 ${window.location.origin}
@@ -59,27 +54,6 @@ ${window.location.origin}
     }
   }, [resultsData]);
 
-  const calculateStats = useCallback(() => {
-    if (!resultsData?.originalText || !resultsData?.userTranscript) {
-      return { wordCount: 0, completeness: 0, efficiency: 0 };
-    }
-
-    const originalWords = resultsData.originalText.split(/\s+/).filter(word => word.length > 0);
-    const transcriptWords = resultsData.userTranscript.split(/\s+/).filter(word => word.length > 0);
-    
-    const completeness = Math.round((transcriptWords.length / originalWords.length) * 100);
-    const efficiency = resultsData.practiceSettings?.duration 
-      ? Math.round(originalWords.length / (parseInt(resultsData.practiceSettings.duration.split(':')[0]) * 60 + parseInt(resultsData.practiceSettings.duration.split(':')[1])))
-      : 0;
-
-    return {
-      originalWordCount: originalWords.length,
-      transcriptWordCount: transcriptWords.length,
-      completeness: Math.min(completeness, 100),
-      efficiency
-    };
-  }, [resultsData]);
-
   if (!resultsData) {
     return (
       <div className="results-page error">
@@ -89,8 +63,6 @@ ${window.location.origin}
       </div>
     );
   }
-
-  const stats = calculateStats();
 
   return (
     <div className="results-page">
@@ -119,30 +91,6 @@ ${window.location.origin}
       </header>
 
       <main className="results-content">
-        <div className="stats-section">
-          <h2>통계</h2>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{stats.originalWordCount}</div>
-              <div className="stat-label">원본 단어 수</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{stats.transcriptWordCount}</div>
-              <div className="stat-label">통역 단어 수</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{stats.completeness}%</div>
-              <div className="stat-label">완성도</div>
-            </div>
-            {resultsData.practiceSettings?.duration && (
-              <div className="stat-card">
-                <div className="stat-value">{resultsData.practiceSettings.duration}</div>
-                <div className="stat-label">소요 시간</div>
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="comparison-section">
           <div className="text-panels">
             <div className="text-panel original">
@@ -156,9 +104,9 @@ ${window.location.origin}
             </div>
 
             <div className="text-panel translation">
-              <h3>통역 결과</h3>
+              <h3>통역 텍스트</h3>
               <div className="text-content">
-                {resultsData.userTranscript || '통역 결과가 없습니다.'}
+                {resultsData.userTranscript || '통역 텍스트가 없습니다.'}
               </div>
               <div className="text-info">
                 글자 수: {resultsData.userTranscript?.length || 0}
@@ -170,49 +118,6 @@ ${window.location.origin}
                   <audio src={resultsData.audioUrl} controls />
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-
-        <div className="analysis-section">
-          <h2>분석 및 개선점</h2>
-          <div className="analysis-content">
-            <div className="analysis-item">
-              <h4>완성도 분석</h4>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ width: `${stats.completeness}%` }}
-                />
-                <span className="progress-text">{stats.completeness}%</span>
-              </div>
-              <p>
-                {stats.completeness >= 80 
-                  ? "🎉 훌륭합니다! 높은 완성도를 보여주었습니다."
-                  : stats.completeness >= 60
-                  ? "👍 좋은 결과입니다. 조금 더 완전한 통역을 목표로 해보세요."
-                  : "💪 더 연습이 필요합니다. 천천히 정확하게 통역해보세요."
-                }
-              </p>
-            </div>
-
-            <div className="analysis-item">
-              <h4>개선 제안</h4>
-              <ul className="suggestions">
-                {stats.completeness < 70 && (
-                  <li>더 완전한 문장으로 통역해보세요.</li>
-                )}
-                {stats.transcriptWordCount < stats.originalWordCount * 0.5 && (
-                  <li>내용을 더 풍부하게 표현해보세요.</li>
-                )}
-                {resultsData.mode === 'sight-translation' && (
-                  <li>롤링 속도를 조정하여 자신에게 맞는 페이스를 찾아보세요.</li>
-                )}
-                {resultsData.mode === 'simultaneous' && (
-                  <li>재생 속도를 조정하여 단계적으로 연습해보세요.</li>
-                )}
-                <li>반복 연습을 통해 유창성을 향상시켜보세요.</li>
-              </ul>
             </div>
           </div>
         </div>
