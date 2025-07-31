@@ -16,7 +16,8 @@
       "Bash(pkill:*)",
       "Bash(true)",
       "Bash(rm:*)",
-      "Bash(timeout 10s npm run dev)"
+      "Bash(timeout 10s npm run dev)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }
