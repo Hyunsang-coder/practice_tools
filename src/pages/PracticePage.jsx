@@ -37,7 +37,8 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
       intervalRef.current = setInterval(() => {
         setCurrentIndex(prev => {
           const next = prev + 1;
-          if (next >= words.length) {
+          if (next > words.length) {
+            // 마지막 단어 이후에도 한 번 더 진행해서 100% 달성
             return prev;
           }
           return next;
@@ -59,12 +60,22 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
 
   // 진행률 및 완료 상태 처리를 별도 useEffect로 분리
   useEffect(() => {
-    if (currentIndex >= words.length && words.length > 0) {
+    if (words.length === 0) return;
+    
+    if (currentIndex >= words.length) {
+      // 100% 달성 후 완료 처리
+      if (onProgress) {
+        onProgress(100);
+      }
       if (onComplete) {
         onComplete();
       }
-    } else if (onProgress && words.length > 0) {
-      onProgress(Math.round((currentIndex / words.length) * 100));
+    } else {
+      // 진행률 계산: 마지막 단어에서 100%가 되도록 조정
+      const progress = Math.round(Math.min(100, (currentIndex / Math.max(1, words.length - 1)) * 100));
+      if (onProgress) {
+        onProgress(progress);
+      }
     }
   }, [currentIndex, words.length, onComplete, onProgress]);
 
@@ -131,16 +142,20 @@ function PracticePage() {
   const [progress, setProgress] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [enableRecording, setEnableRecording] = useState(true); // 녹음 활성화 상태
+  const [autoStopTimeout, setAutoStopTimeout] = useState(null); // 자동 중지 타이머
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
   const {
     isRecording,
+    isPaused,
     audioData,
     recordingTime,
     error: recordingError,
     startRecording,
+    pauseRecording,
+    resumeRecording,
     stopRecording,
     // resetRecording, // 사용하지 않음
     getAudioUrl
@@ -170,13 +185,28 @@ function PracticePage() {
   //   }
   // }, [practiceData]);
 
+  // Cleanup auto-stop timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoStopTimeout) {
+        clearTimeout(autoStopTimeout);
+      }
+    };
+  }, [autoStopTimeout]);
+
   const handleRestart = useCallback(() => {
+    // 자동 중지 타이머가 있다면 취소
+    if (autoStopTimeout) {
+      clearTimeout(autoStopTimeout);
+      setAutoStopTimeout(null);
+    }
+    
     setIsCompleted(false);
     setIsPlaying(false);
     setProgress(0);
     // 재시작을 위해 키를 변경하여 RollingText 컴포넌트를 리셋
     setRestartKey(prev => prev + 1);
-  }, []);
+  }, [autoStopTimeout]);
 
   // 연습 시작 함수 (녹음 체크박스 상태에 따라 처리)
   const handleStartPractice = useCallback(async () => {
@@ -195,13 +225,39 @@ function PracticePage() {
     }
   }, [enableRecording, isRecording, startRecording, practiceData?.mode]);
 
-  // 연습 중지 함수
+  // 연습 일시정지 함수
+  const handlePausePractice = useCallback(() => {
+    setIsPlaying(false);
+    
+    if (isRecording && !isPaused) {
+      pauseRecording();
+    }
+  }, [isRecording, isPaused, pauseRecording]);
+
+  // 연습 재개 함수
+  const handleResumePractice = useCallback(() => {
+    if (practiceData?.mode === 'sight-translation') {
+      setIsPlaying(true);
+      
+      if (isRecording && isPaused) {
+        resumeRecording();
+      }
+    }
+  }, [practiceData?.mode, isRecording, isPaused, resumeRecording]);
+
+  // 연습 완전 중지 함수
   const handleStopPractice = useCallback(() => {
+    // 자동 중지 타이머가 있다면 취소
+    if (autoStopTimeout) {
+      clearTimeout(autoStopTimeout);
+      setAutoStopTimeout(null);
+    }
+    
     if (isRecording) {
       stopRecording();
     }
     setIsPlaying(false);
-  }, [isRecording, stopRecording]);
+  }, [isRecording, stopRecording, autoStopTimeout]);
 
   const handlePlayPause = useCallback(() => {
     if (isCompleted) {
@@ -221,14 +277,19 @@ function PracticePage() {
         setIsPlaying(!isPlaying);
       }
     } else {
-      // 시역 연습의 경우 handleStartPractice/handleStopPractice 사용
+      // 시역 연습의 경우: 첫 시작, 재개, 일시정지 처리
       if (isPlaying) {
-        handleStopPractice();
+        // 연습 중이면 일시정지
+        handlePausePractice();
+      } else if (isPaused && isRecording) {
+        // 일시정지 상태이면 재개
+        handleResumePractice();
       } else {
+        // 처음 시작
         handleStartPractice();
       }
     }
-  }, [isPlaying, practiceData?.mode, isCompleted, handleRestart, handleStartPractice, handleStopPractice]);
+  }, [isPlaying, isPaused, isRecording, practiceData?.mode, isCompleted, handleRestart, handleStartPractice, handlePausePractice, handleResumePractice]);
 
   const handleMediaLoadedMetadata = useCallback(() => {
     const mediaElement = videoRef.current || audioRef.current;
@@ -240,15 +301,21 @@ function PracticePage() {
   const handleSightTranslationComplete = useCallback(() => {
     setIsPlaying(false);
     setIsCompleted(true);
-  }, []);
+    
+    // 진행률 100% 달성 시 4초 후 자동으로 녹음 중지
+    if (isRecording && !isPaused) {
+      const timeoutId = setTimeout(() => {
+        console.log('Auto-stopping recording after 4 seconds grace period');
+        stopRecording();
+      }, 4000);
+      setAutoStopTimeout(timeoutId);
+    }
+  }, [isRecording, isPaused, stopRecording]);
 
   // finishPractice를 먼저 정의 (호이스팅 문제 해결)
   const finishPractice = useCallback(async () => {
-    console.log('finishPractice - audioData 상태:', {
-      hasAudioData: !!audioData,
-      audioSize: audioData?.size,
-      audioType: audioData?.type
-    });
+    // 연습 완전 중지 (녹음 종료)
+    handleStopPractice();
 
     const resultsData = {
       mode: practiceData?.mode,
@@ -262,14 +329,8 @@ function PracticePage() {
       }
     };
 
-    console.log('finishPractice - resultsData:', {
-      hasAudioUrl: !!resultsData.audioUrl,
-      hasAudioData: !!resultsData.audioData,
-      mode: resultsData.mode
-    });
-
     navigate('/results', { state: resultsData });
-  }, [audioData, practiceData, getAudioUrl, recordingTime, navigate]);
+  }, [audioData, practiceData, getAudioUrl, recordingTime, navigate, handleStopPractice]);
 
   const handleFinishPractice = useCallback(async () => {
     // 진행률이 100%가 아닐 때만 확인 팝업 표시
@@ -393,7 +454,7 @@ function PracticePage() {
                 type="checkbox"
                 checked={enableRecording}
                 onChange={(e) => setEnableRecording(e.target.checked)}
-                disabled={isPlaying}
+                disabled={isPlaying || isRecording}
               />
               <span className={styles.checkboxLabel}>
                 🎙️ 녹음하면서 연습하기
@@ -407,7 +468,11 @@ function PracticePage() {
                 className={styles.playPauseButton}
                 onClick={handlePlayPause}
               >
-                {isCompleted ? '🔄 다시 연습' : isPlaying ? '⏸️ 일시정지' : '🏁 연습 시작'}
+                {isCompleted ? '🔄 다시 연습' : 
+                 isPlaying ? '⏸️ 일시정지' : 
+                 (isPaused && isRecording) ? '▶️ 연습 재개' : 
+                 (isCompleted && autoStopTimeout) ? '⏸️ 일시정지' :
+                 '🏁 연습 시작'}
               </button>
             )}
 
@@ -415,7 +480,7 @@ function PracticePage() {
             <button
               className={styles.finishButton}
               onClick={handleFinishPractice}
-              disabled={isPlaying}
+              disabled={isPlaying || (isRecording && !isPaused && !isCompleted && !autoStopTimeout)}
             >
               연습 완료
             </button>

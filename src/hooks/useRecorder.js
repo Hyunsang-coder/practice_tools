@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 
 const useRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [audioData, setAudioData] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState(null);
@@ -72,10 +73,36 @@ const useRecorder = () => {
     }
   }, []);
 
+  const pauseRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording && !isPaused) {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      
+      // Pause timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  }, [isRecording, isPaused]);
+
+  const resumeRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording && isPaused) {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      
+      // Resume timer
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    }
+  }, [isRecording, isPaused]);
+
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      setIsPaused(false);
       
       // Clear timer
       if (timerRef.current) {
@@ -89,6 +116,7 @@ const useRecorder = () => {
     setAudioData(null);
     setRecordingTime(0);
     setError(null);
+    setIsPaused(false);
     audioChunksRef.current = [];
   }, []);
 
@@ -116,10 +144,13 @@ const useRecorder = () => {
 
   return {
     isRecording,
+    isPaused,
     audioData,
     recordingTime: formatTime(recordingTime),
     error,
     startRecording,
+    pauseRecording,
+    resumeRecording,
     stopRecording,
     resetRecording,
     getAudioUrl,

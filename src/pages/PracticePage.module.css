@@ -205,13 +205,19 @@
   right: 1rem;
   background: rgba(59, 130, 246, 0.9);
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
   font-size: var(--font-size-sm);
   font-weight: 600;
   backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 10;
+  min-width: 60px;
+  text-align: center;
+  aspect-ratio: 1.2/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 
@@ -655,8 +661,11 @@
   .progress-indicator {
     bottom: 0.5rem;
     right: 0.5rem;
-    padding: 0.3rem 0.8rem;
+    padding: 0.6rem 0.8rem;
     font-size: var(--font-size-xs);
+    border-radius: 10px;
+    min-width: 50px;
+    aspect-ratio: 1.2/1;
   }
 
   .recordingControl {
