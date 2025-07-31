@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import useRecorder from '../hooks/useRecorder';
 import useWhisper from '../hooks/useWhisper';
 import ConfirmDialog from '../components/ConfirmDialog';
-import './PracticePage.css';
+import styles from './PracticePage.module.css';
 
 // Rolling highlight component for sight translation
 const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
@@ -71,20 +71,20 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
     const visibleWords = words.slice(startIndex, endIndex);
 
     return (
-      <span className="text-wrapper" >
+      <span className={styles.textWrapper} >
         {visibleWords.map((word, localIndex) => {
           const globalIndex = startIndex + localIndex;
-          let className = `word word-${globalIndex}`;
+          let className = `${styles.word} word-${globalIndex}`;
 
           // 현재 단어와 주변 단어들 하이라이트
           if (globalIndex >= currentIndex - 1 && globalIndex <= currentIndex + 2) {
-            className += ' highlighted';
+            className += ` ${styles.highlighted}`;
           }
           if (globalIndex === currentIndex) {
-            className += ' current';
+            className += ` ${styles.current}`;
           }
           if (globalIndex < currentIndex) {
-            className += ' passed';
+            className += ` ${styles.passed}`;
           }
 
           return (
@@ -99,11 +99,11 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
   };
 
   return (
-    <div className="rolling-text">
-      <div className="text-content" ref={textContentRef}>
+    <div className={styles.rollingText}>
+      <div className={styles.textContent} ref={textContentRef}>
         {getHighlightedText()}
         {onProgress && (
-          <div className="progress-indicator">
+          <div className={styles.progressIndicator}>
             {Math.round((currentIndex / words.length) * 100)}%
           </div>
         )}
@@ -256,7 +256,7 @@ function PracticePage() {
 
   if (!practiceData) {
     return (
-      <div className="practice-page error">
+      <div className={`${styles.practicePage} ${styles.error}`}>
         <h1>오류</h1>
         <p>연습 데이터를 찾을 수 없습니다.</p>
         <button onClick={() => navigate('/')}>홈으로 돌아가기</button>
@@ -268,10 +268,10 @@ function PracticePage() {
     practiceData?.file?.type.startsWith('video/');
 
   return (
-    <div className="practice-page">
-      <header className="practice-header">
+    <div className={styles.practicePage}>
+      <header className={styles.practiceHeader}>
         <button
-          className="back-button"
+          className={styles.backButton}
           onClick={() => navigate('/')}
         >
           ← 뒤로 가기
@@ -279,17 +279,17 @@ function PracticePage() {
         <h1>
           {practiceData.mode === 'sight-translation' ? '시역 연습' : '동시통역 연습'}
         </h1>
-        <div className="practice-status">
+        <div className={styles.practiceStatus}>
           {isRecording && (
-            <span className="recording-indicator">
+            <span className={styles.recordingIndicator}>
               🔴 녹음 중 ({recordingTime})
             </span>
           )}
         </div>
       </header>
 
-      <main className="practice-content">
-        <div className="content-area">
+      <main className={styles.practiceContent}>
+        <div className={styles.contentArea}>
           {practiceData.mode === 'sight-translation' ? (
             <RollingText
               key={restartKey}
@@ -300,7 +300,7 @@ function PracticePage() {
               onProgress={setProgress}
             />
           ) : (
-            <div className="media-player">
+            <div className={styles.mediaPlayer}>
               {isVideo ? (
                 <video
                   ref={videoRef}
@@ -312,7 +312,7 @@ function PracticePage() {
                   onEnded={() => setIsCompleted(true)}
                 />
               ) : (
-                <div className="audio-player-container">
+                <div className={styles.audioPlayerContainer}>
                   <audio
                     ref={audioRef}
                     src={mediaUrl}
@@ -322,8 +322,8 @@ function PracticePage() {
                     onPause={() => setIsPlaying(false)}
                     onEnded={() => setIsCompleted(true)}
                   />
-                  <div className="audio-visual">
-                    <div className="audio-icon">🎵</div>
+                  <div className={styles.audioVisual}>
+                    <div className={styles.audioIcon}>🎵</div>
                     <p>오디오 재생 중</p>
                   </div>
                 </div>
@@ -332,10 +332,10 @@ function PracticePage() {
           )}
         </div>
 
-        <div className="controls-area">
+        <div className={styles.controlsArea}>
           {practiceData.mode === 'sight-translation' && (
-            <div className="speed-control">
-              <label className="speed-label">
+            <div className={styles.speedControl}>
+              <label className={styles.speedLabel}>
                 페이싱 속도: {currentSpeed}배 ({Math.round(100 * currentSpeed)} WPM)
               </label>
               <input
@@ -345,9 +345,9 @@ function PracticePage() {
                 step="0.1"
                 value={currentSpeed}
                 onChange={(e) => setCurrentSpeed(parseFloat(e.target.value))}
-                className="speed-slider"
+                className={styles.speedSlider}
               />
-              <div className="speed-markers">
+              <div className={styles.speedMarkers}>
                 <span>0.5배</span>
                 <span>1.0배</span>
                 <span>1.5배</span>
@@ -355,10 +355,10 @@ function PracticePage() {
             </div>
           )}
 
-          <div className="control-buttons">
+          <div className={styles.controlButtons}>
             {practiceData.mode === 'sight-translation' && (
               <button
-                className="play-pause-button"
+                className={styles.playPauseButton}
                 onClick={handlePlayPause}
               >
                 {isCompleted ? '🔄 다시 재생' : isPlaying ? '⏸️ 일시정지' : '▶️ 재생'}
@@ -366,7 +366,7 @@ function PracticePage() {
             )}
 
             <button
-              className={`record-button ${isRecording ? 'recording' : ''}`}
+              className={`${styles.recordButton} ${isRecording ? styles.recording : ''}`}
               onClick={handleRecordingToggle}
               disabled={isTranscribing}
             >
@@ -374,7 +374,7 @@ function PracticePage() {
             </button>
 
             <button
-              className="finish-button"
+              className={styles.finishButton}
               onClick={handleFinishPractice}
               disabled={isTranscribing || isPlaying}
             >
@@ -383,13 +383,13 @@ function PracticePage() {
           </div>
 
           {recordingError && (
-            <div className="error-message">
+            <div className={styles.errorMessage}>
               {recordingError}
             </div>
           )}
 
           {audioData && (
-            <div className="recording-info">
+            <div className={styles.recordingInfo}>
               <p>✅ 녹음 완료 ({recordingTime})</p>
               <audio src={getAudioUrl()} controls />
             </div>

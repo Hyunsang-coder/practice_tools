@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './SightTranslationPage.css';
+import styles from './SightTranslationPage.module.css';
 
 const SAMPLE_TEXTS = [
   {
@@ -21,15 +21,6 @@ const SAMPLE_TEXTS = [
 ];
 
 const BASE_WPM = 100; // 기본 100 WPM
-
-const SPEED_OPTIONS = [
-  { value: 0.5, label: '0.5배 (50 WPM)', wpm: BASE_WPM * 0.5 },
-  { value: 0.7, label: '0.7배 (70 WPM)', wpm: BASE_WPM * 0.7 },
-  { value: 0.9, label: '0.9배 (90 WPM)', wpm: BASE_WPM * 0.9 },
-  { value: 1.0, label: '1.0배 (100 WPM)', wpm: BASE_WPM * 1.0 },
-  { value: 1.3, label: '1.3배 (130 WPM)', wpm: BASE_WPM * 1.3 },
-  { value: 1.5, label: '1.5배 (150 WPM)', wpm: BASE_WPM * 1.5 }
-];
 
 function SightTranslationPage() {
   const navigate = useNavigate();
@@ -68,10 +59,10 @@ function SightTranslationPage() {
   };
 
   return (
-    <div className="sight-translation-page">
-      <header className="page-header">
+    <div className={styles.sightTranslationPage}>
+      <header className={styles.pageHeader}>
         <button
-          className="back-button"
+          className={styles.backButton}
           onClick={() => navigate('/')}
         >
           ← 홈으로
@@ -80,14 +71,14 @@ function SightTranslationPage() {
         <p>연습할 텍스트와 설정을 선택하세요</p>
       </header>
 
-      <main className="preparation-content">
-        <div className="text-selection-section">
+      <main className={styles.preparationContent}>
+        <div className={styles.textSelectionSection}>
           <h2>텍스트 선택</h2>
 
-          <div className="input-options">
-            <div className="option-tabs">
+          <div className={styles.inputOptions}>
+            <div className={styles.optionTabs}>
               <button
-                className={`tab ${useCustomText ? 'active' : ''}`}
+                className={`${styles.tab} ${useCustomText ? styles.active : ''}`}
                 onClick={() => {
                   setUseCustomText(true);
                   setSelectedSample('');
@@ -96,7 +87,7 @@ function SightTranslationPage() {
                 직접 입력
               </button>
               <button
-                className={`tab ${!useCustomText ? 'active' : ''}`}
+                className={`${styles.tab} ${!useCustomText ? styles.active : ''}`}
                 onClick={() => setUseCustomText(false)}
               >
                 샘플 선택
@@ -104,24 +95,24 @@ function SightTranslationPage() {
             </div>
 
             {useCustomText ? (
-              <div className="custom-input">
+              <div className={styles.customInput}>
                 <textarea
                   value={inputText}
                   onChange={(e) => handleCustomTextChange(e.target.value)}
                   placeholder="연습하고 싶은 한국어 텍스트를 입력하세요..."
                   rows={10}
-                  className="text-input"
+                  className={styles.textInput}
                 />
-                <div className="text-info">
-                  글자 수: {inputText.length} | 예상 소요 시간: {Math.ceil(inputText.length / 10)}초
+                <div className={styles.textInfo}>
+                  글자 수: {inputText.length} | 예상 소요 시간: {inputText.length > 0 ? Math.ceil(inputText.length / (BASE_WPM * speed) * 60) : 0}초
                 </div>
               </div>
             ) : (
-              <div className="sample-selection">
+              <div className={styles.sampleSelection}>
                 <select
                   value={selectedSample}
                   onChange={(e) => handleSampleSelect(e.target.value)}
-                  className="sample-select"
+                  className={styles.sampleSelect}
                 >
                   <option value="">샘플 텍스트를 선택하세요</option>
                   {SAMPLE_TEXTS.map(sample => (
@@ -132,7 +123,7 @@ function SightTranslationPage() {
                 </select>
 
                 {selectedSample && (
-                  <div className="sample-preview">
+                  <div className={styles.samplePreview}>
                     <h4>미리보기:</h4>
                     <p>{inputText}</p>
                   </div>
@@ -142,13 +133,13 @@ function SightTranslationPage() {
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className={styles.settingsSection}>
           <h2>연습 설정</h2>
 
-          <div className="speed-selection">
+          <div className={styles.speedSelection}>
             <h3>페이싱 속도</h3>
-            <div className="speed-slider-container">
-              <label className="speed-display">
+            <div className={styles.speedSliderContainer}>
+              <label className={styles.speedDisplay}>
                 {speed}배 ({Math.round(BASE_WPM * speed)} WPM)
               </label>
               <input
@@ -158,9 +149,9 @@ function SightTranslationPage() {
                 step="0.1"
                 value={speed}
                 onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                className="speed-slider-setup"
+                className={styles.speedSliderSetup}
               />
-              <div className="speed-markers">
+              <div className={styles.speedMarkers}>
                 <span>0.5배</span>
                 <span>1.0배</span>
                 <span>1.5배</span>
@@ -168,7 +159,7 @@ function SightTranslationPage() {
             </div>
           </div>
 
-          <div className="practice-info">
+          <div className={styles.practiceInfo}>
             <h3>연습 방법</h3>
             <ul>
               <li>텍스트가 자동으로 롤링 하이라이트됩니다</li>
@@ -179,9 +170,9 @@ function SightTranslationPage() {
           </div>
         </div>
 
-        <div className="action-section">
+        <div className={styles.actionSection}>
           <button
-            className="start-practice-button"
+            className={styles.startPracticeButton}
             onClick={handleStartPractice}
             disabled={!inputText.trim()}
           >
