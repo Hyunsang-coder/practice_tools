@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
+import useMp3Converter from '../hooks/useMp3Converter';
+import ConversionProgressDialog from '../components/ConversionProgressDialog';
 import './ResultsPage.css';
 
 function ResultsPage() {
@@ -9,6 +11,17 @@ function ResultsPage() {
   const resultsData = location.state;
 
   const [isExporting, setIsExporting] = useState(false);
+  const [showConversionDialog, setShowConversionDialog] = useState(false);
+  
+  // MP3 변환 훅
+  const {
+    convertToMp3,
+    isConverting,
+    conversionProgress,
+    error: conversionError,
+    resetConverter
+  } = useMp3Converter();
+  
   // 평가 커스터마이제이션 상태
   const [evaluationCriteria, setEvaluationCriteria] = useState({
     accuracy: true,
@@ -30,6 +43,27 @@ function ResultsPage() {
 
     try {
       const { originalText, practiceSettings, mode } = resultsData;
+      
+      // MP3 변환 수행
+      let finalAudioData = resultsData.audioData;
+      let audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.webm`;
+      
+      if (resultsData.audioData) {
+        setShowConversionDialog(true);
+        
+        try {
+          const mp3Blob = await convertToMp3(resultsData.audioData);
+          if (mp3Blob) {
+            finalAudioData = mp3Blob;
+            audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.mp3`;
+          }
+        } catch (err) {
+          console.error('MP3 conversion failed, using original format:', err);
+          // Continue with original audio if conversion fails
+        }
+        
+        setShowConversionDialog(false);
+      }
 
       // 평가 기준 텍스트 생성
       const criteriaText = Object.entries(evaluationCriteria)
@@ -77,9 +111,8 @@ Interpreter's Playground에서 생성됨
 ${window.location.origin}
 `;
 
-      // 녹음 파일 이름 생성
+      // 파일 이름 생성
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const audioFileName = `recording_${timestamp}.webm`;
       const textFileName = `evaluation_request_${timestamp}.txt`;
 
       // ZIP 파일 생성 및 다운로드
@@ -88,8 +121,8 @@ ${window.location.origin}
       // 1. 평가 요청 텍스트 추가
       zip.file(textFileName, evaluationContent);
 
-      // 2. 녹음 파일 추가
-      zip.file(audioFileName, resultsData.audioData);
+      // 2. 녹음 파일 추가 (MP3 변환된 파일 또는 원본)
+      zip.file(audioFileName, finalAudioData);
 
       // ZIP 파일 생성 및 다운로드
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -110,7 +143,7 @@ ${window.location.origin}
     } finally {
       setIsExporting(false);
     }
-  }, [resultsData, evaluationCriteria, evaluationFormat, additionalRequests]);
+  }, [resultsData, evaluationCriteria, evaluationFormat, additionalRequests, convertToMp3]);
 
   // 평가 기준 변경 핸들러
   const handleCriteriaChange = useCallback((criteriaKey) => {
@@ -148,9 +181,9 @@ ${window.location.origin}
           <button
             className={`download-button ${!resultsData?.audioData ? 'disabled' : ''}`}
             onClick={downloadEvaluationPackage}
-            disabled={isExporting || !resultsData?.audioData}
+            disabled={isExporting || isConverting || !resultsData?.audioData}
           >
-            {isExporting ? '다운로드 중...' : '📦 Claude 평가 패키지 다운로드'}
+            {isConverting ? 'MP3 변환 중...' : isExporting ? '다운로드 중...' : '📦 평가용 파일 다운로드 (MP3)'}
           </button>
           <button
             className="home-button"
@@ -180,6 +213,20 @@ ${window.location.origin}
             <div className="audio-player">
               <audio src={resultsData.audioUrl} controls preload="metadata" />
             </div>
+          </div>
+        )}
+
+        {/* 변환 오류 표시 */}
+        {conversionError && (
+          <div className="error-message" style={{
+            background: '#fee2e2',
+            color: '#dc2626',
+            padding: '1rem',
+            borderRadius: '8px',
+            margin: '1rem 0',
+            border: '1px solid #fecaca'
+          }}>
+            {conversionError}
           </div>
         )}
 
@@ -267,6 +314,15 @@ ${window.location.origin}
           </button>
         </div>
       </main>
+      
+      <ConversionProgressDialog
+        isOpen={showConversionDialog}
+        progress={conversionProgress}
+        onCancel={() => {
+          setShowConversionDialog(false);
+          resetConverter();
+        }}
+      />
     </div>
   );
 }

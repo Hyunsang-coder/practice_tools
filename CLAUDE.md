@@ -151,3 +151,7 @@ npm run preview
 - Large model loading requires progress indicators
 - Memory management crucial for WASM implementations
 - Service worker caching recommended for model files
+
+## Development Strategies
+
+- 직접 개발 서버 실행하지 않고 사용자에게 테스트 권유.
