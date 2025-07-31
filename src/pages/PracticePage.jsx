@@ -62,11 +62,11 @@ const RollingText = ({ text, speed, isPlaying, onComplete }) => {
     const windowSize = 12; // 한 번에 보여줄 단어 수
     const startIndex = Math.max(0, currentIndex - Math.floor(windowSize / 3));
     const endIndex = Math.min(words.length, startIndex + windowSize);
-    
+
     const visibleWords = words.slice(startIndex, endIndex);
-    
+
     return (
-      <span style={{ whiteSpace: 'nowrap', display: 'block', lineHeight: '3.5rem' }}>
+      <span className="text-wrapper" >
         {visibleWords.map((word, localIndex) => {
           const globalIndex = startIndex + localIndex;
           let className = `word word-${globalIndex}`;
