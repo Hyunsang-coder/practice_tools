@@ -1,0 +1,387 @@
+.simultaneous-page {
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+  color: #1e293b;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.back-button:hover {
+  background: #f8fafc;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  font-size: 1.2rem;
+  color: #64748b;
+}
+
+.preparation-content {
+  max-width: 800px;
+  margin: 0 auto;
+  display: grid;
+  gap: 2rem;
+}
+
+.file-upload-section,
+.script-extraction-section,
+.settings-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.file-upload-section h2,
+.script-extraction-section h2,
+.settings-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+}
+
+.file-drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 1.5rem;
+  background: #f9fafb;
+}
+
+.file-drop-zone:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.drop-zone-content .upload-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.drop-zone-content h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.drop-zone-content p {
+  color: #64748b;
+  margin: 0.5rem 0;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.file-icon {
+  font-size: 3rem;
+}
+
+.file-details strong {
+  font-size: 1.2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.file-details p {
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.file-status {
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.file-status.valid {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.file-status.invalid {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.supported-formats {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.supported-formats h4 {
+  margin-bottom: 0.8rem;
+  color: #1e40af;
+}
+
+.format-groups {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.format-group {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.extraction-info {
+  text-align: center;
+  padding: 2rem;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.extract-button {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.extract-button:hover {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  transform: translateY(-2px);
+}
+
+.processing-status {
+  text-align: center;
+  padding: 2rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  transition: width 0.3s ease;
+}
+
+.extracted-script {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.extracted-script h4 {
+  margin-bottom: 1rem;
+  color: #1e40af;
+}
+
+.script-preview {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  max-height: 150px;
+  overflow-y: auto;
+  color: #1e293b;
+}
+
+.script-note {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.speed-selection h3,
+.practice-info h3 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.speed-slider-container {
+  text-align: center;
+}
+
+.speed-display {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #059669;
+}
+
+.speed-slider-setup {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  outline: none;
+  margin-bottom: 0.5rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.speed-slider-setup::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #047857);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.speed-slider-setup::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.speed-markers {
+  display: flex;
+  justify-content: space-between;
+  max-width: 400px;
+  margin: 0 auto;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* 기존 라디오 버튼 스타일 - 슬라이더로 대체됨 */
+.speed-options {
+  display: none;
+}
+
+.speed-option {
+  display: none;
+}
+
+.speed-option:hover {
+  display: none;
+}
+
+.speed-option input[type="radio"] {
+  display: none;
+}
+
+.practice-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.practice-info li {
+  padding: 0.5rem 0;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.practice-info li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+.action-section {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.start-practice-button {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: white;
+  border: none;
+  padding: 1.2rem 3rem;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.start-practice-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.start-practice-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .simultaneous-page {
+    padding: 1rem;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .speed-options {
+    display: none;
+  }
+
+  .back-button {
+    position: static;
+    margin-bottom: 1rem;
+  }
+
+  .file-info {
+    flex-direction: column;
+    text-align: center;
+  }
+}
