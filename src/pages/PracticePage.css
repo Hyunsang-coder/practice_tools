@@ -106,17 +106,16 @@
   border-radius: 16px;
   padding: 5rem;
   font-size: 2.5rem;
-  line-height: 2.8;
-  text-align: left;
+  line-height: 3.5rem;
+  text-align: center;
   min-height: 700px;
   height: 700px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  will-change: auto;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .word {
@@ -445,11 +444,14 @@
   .text-content {
     font-size: 2.0rem;
     padding: 3rem 2.5rem;
-    line-height: 2.2;
+    line-height: 3rem;
     min-height: 600px;
     height: 600px;
-    overflow-y: auto;
-    scroll-behavior: smooth;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
   }
 
   .control-buttons {

@@ -19,15 +19,12 @@ const RollingText = ({ text, speed, isPlaying, onComplete }) => {
     }
   }, [text]);
 
-  // 스크롤 조정을 위한 useEffect
+  // 텍스트 컨테이너를 상단에 고정하고 스크롤 방지
   useEffect(() => {
-    if (textContentRef.current && currentIndex > 20) { // 20번째 단어부터 스크롤 시작
+    if (textContentRef.current) {
       const container = textContentRef.current;
-
-      // 간단한 스크롤: 단어가 진행될 때마다 조금씩 스크롤
-      const scrollAmount = (currentIndex - 20) * 5; // 단어당 5px씩 스크롤
-
-      container.scrollTop = scrollAmount;
+      // 스크롤을 항상 최상단으로 고정
+      container.scrollTop = 0;
     }
   }, [currentIndex]);
 
@@ -61,26 +58,34 @@ const RollingText = ({ text, speed, isPlaying, onComplete }) => {
   }, [isPlaying, words, speed, onComplete]);
 
   const getHighlightedText = () => {
+    // 현재 단어 주변의 일정 범위만 표시 (윈도우 방식)
+    const windowSize = 12; // 한 번에 보여줄 단어 수
+    const startIndex = Math.max(0, currentIndex - Math.floor(windowSize / 3));
+    const endIndex = Math.min(words.length, startIndex + windowSize);
+    
+    const visibleWords = words.slice(startIndex, endIndex);
+    
     return (
-      <span>
-        {words.map((word, index) => {
-          let className = `word word-${index}`;
+      <span style={{ whiteSpace: 'nowrap', display: 'block', lineHeight: '3.5rem' }}>
+        {visibleWords.map((word, localIndex) => {
+          const globalIndex = startIndex + localIndex;
+          let className = `word word-${globalIndex}`;
 
-          // Highlight current word and 2-3 surrounding words
-          if (index >= currentIndex - 1 && index <= currentIndex + 3) {
+          // 현재 단어와 주변 단어들 하이라이트
+          if (globalIndex >= currentIndex - 1 && globalIndex <= currentIndex + 2) {
             className += ' highlighted';
           }
-          if (index === currentIndex) {
+          if (globalIndex === currentIndex) {
             className += ' current';
           }
-          if (index < currentIndex - 1) {
+          if (globalIndex < currentIndex) {
             className += ' passed';
           }
 
           return (
-            <span key={index} className={className}>
+            <span key={globalIndex} className={className}>
               {word}
-              {index < words.length - 1 ? ' ' : ''}
+              {localIndex < visibleWords.length - 1 ? ' ' : ''}
             </span>
           );
         })}
