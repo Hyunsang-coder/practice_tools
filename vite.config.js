@@ -14,7 +14,7 @@ export default defineConfig(({ command }) => {
   };
 
   if (command === 'build') {
-    config.base = '/practice_tools/';
+    config.base = '/interpretation_tools/';
   }
 
   return config;
