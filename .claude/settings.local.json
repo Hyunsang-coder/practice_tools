@@ -21,7 +21,8 @@
       "WebFetch(domain:github.com)",
       "Bash(find:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__server-sequential-thinking__sequentialthinking"
     ],
     "deny": []
   }

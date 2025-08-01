@@ -38,14 +38,6 @@ function ResultsPage() {
   const [transcribedText, setTranscribedText] = useState(''); // 전사된 텍스트
   const [transcriptionError, setTranscriptionError] = useState(null); // 전사 에러
 
-  // Cleanup audioUrl from navigation state to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (resultsData?.audioUrl) {
-        URL.revokeObjectURL(resultsData.audioUrl);
-      }
-    };
-  }, [resultsData?.audioUrl]);
 
   // Whisper AI 전사 요청 핸들러
   const handleTranscription = useCallback(async () => {
