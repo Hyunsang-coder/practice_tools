@@ -170,22 +170,21 @@
   display: inline;
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
     color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 1;
   margin: 0;
   padding: 0;
-  color: #000000;
   will-change: opacity, color;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
 
-.word.passed {
-  opacity: 0.5;
-  color: var(--color-text-light);
-  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, color;
-  backface-visibility: hidden;
+.word.highlighted {
+  opacity: 1;
+  /* 사용자 설정 색상이 인라인 스타일로 적용됨 */
+}
+
+.word.dimmed {
+  opacity: 0.3;
+  color: var(--color-text-light) !important;
 }
 
 .progress-bar {

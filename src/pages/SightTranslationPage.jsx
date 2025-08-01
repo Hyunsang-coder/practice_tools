@@ -117,31 +117,6 @@ function SightTranslationPage() {
         </div>
 
         <div className={styles.settingsSection}>
-          <h2>연습 설정</h2>
-
-          <div className={styles.speedSelection}>
-            <h3>페이싱 속도</h3>
-            <div className={styles.speedSliderContainer}>
-              <label className={styles.speedDisplay}>
-                {speed}배 ({Math.round(BASE_WPM * speed)} WPM)
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="1.5"
-                step="0.1"
-                value={speed}
-                onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                className={styles.speedSliderSetup}
-              />
-              <div className={styles.speedMarkers}>
-                <span>0.5배</span>
-                <span>1.0배</span>
-                <span>1.5배</span>
-              </div>
-            </div>
-          </div>
-
           <div className={styles.practiceInfo}>
             <h3>연습 방법</h3>
             <ul>

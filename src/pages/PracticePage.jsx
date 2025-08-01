@@ -16,7 +16,8 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
   const {
     windowSize = 12,           // 한 번에 보여줄 단어 수
     fontSize = 2.0,            // 폰트 크기 (rem)
-    textColor = '#000000'      // 텍스트 색상
+    textColor = '#000000',     // 텍스트 색상
+    highlightRange = 0         // 강조 범위
   } = displaySettings || {};
 
   useEffect(() => {
@@ -98,9 +99,16 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
   }, [currentIndex, words.length, onComplete, onProgress]);
 
   const getHighlightedText = () => {
-    // 현재 단어 주변의 일정 범위만 표시 (윈도우 방식)
-    const startIndex = Math.max(0, currentIndex - Math.floor(windowSize / 5));
-    const endIndex = Math.min(words.length, startIndex + windowSize);
+    // 현재 단어를 중앙에 배치하는 윈도우 방식
+    const halfWindow = Math.floor(windowSize / 2);
+    let startIndex = Math.max(0, currentIndex - halfWindow);
+    let endIndex = Math.min(words.length, startIndex + windowSize);
+
+    // 텍스트 끝 부분에서 윈도우 크기 보정
+    if (endIndex === words.length && startIndex > 0) {
+      startIndex = Math.max(0, words.length - windowSize);
+      endIndex = words.length;
+    }
 
     const visibleWords = words.slice(startIndex, endIndex);
 
@@ -110,15 +118,12 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
           const globalIndex = startIndex + localIndex;
           let className = `${styles.word} word-${globalIndex}`;
 
-          // 현재 단어와 주변 단어들 하이라이트
-          // if (globalIndex >= currentIndex - highlightRange && globalIndex <= currentIndex + highlightRange) {
-          //   className += ` ${styles.highlighted}`;
-          // }
-          // if (globalIndex === currentIndex) {
-          //   className += ` ${styles.current}`;
-          // }
-          if (globalIndex < currentIndex) {
-            className += ` ${styles.passed}`;
+          // 강조 범위 내의 단어들은 기본색(강조), 나머지는 연한색
+          const distance = Math.abs(globalIndex - currentIndex);
+          if (distance <= highlightRange) {
+            className += ` ${styles.highlighted}`;
+          } else {
+            className += ` ${styles.dimmed}`;
           }
 
           return (
@@ -166,7 +171,8 @@ function PracticePage() {
   const [displaySettings, setDisplaySettings] = useState({
     windowSize: 12,        // 한 번에 보여줄 단어 수
     fontSize: 2.0,         // 폰트 크기 (rem)
-    textColor: '#000000'   // 텍스트 색상
+    textColor: '#000000',  // 텍스트 색상
+    highlightRange: 0      // 강조 범위 (0=현재만, 1=현재±1, 2=현재±2)
   });
 
   const videoRef = useRef(null);
@@ -577,6 +583,34 @@ function PracticePage() {
                         className={styles.colorPicker}
                         title="사용자 정의 색상"
                       />
+                    </div>
+                  </div>
+
+                  <div className={styles.settingGroup}>
+                    <label className={styles.settingLabel}>
+                      강조 범위: <span className={styles.settingValue}>
+                        {displaySettings.highlightRange === 0 ? '현재만' :
+                          displaySettings.highlightRange === 1 ? '현재±1개' :
+                            displaySettings.highlightRange === 2 ? '현재±2개' :
+                              displaySettings.highlightRange === 3 ? '현재±3개' : `현재±${displaySettings.highlightRange}개`}
+                      </span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="1"
+                      value={displaySettings.highlightRange}
+                      onChange={(e) => setDisplaySettings(prev => ({
+                        ...prev,
+                        highlightRange: parseInt(e.target.value)
+                      }))}
+                      className={styles.settingSlider}
+                    />
+                    <div className={styles.settingMarkers}>
+                      <span>현재만</span>
+                      <span>±2개</span>
+                      <span>±5개</span>
                     </div>
                   </div>
                 </div>
