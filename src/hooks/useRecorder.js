@@ -124,7 +124,7 @@ const useRecorder = () => {
             streamRef.current = null;
           }
         } catch (error) {
-          console.error('Error in mediaRecorder.onstop:', error);
+          console.error('MediaRecorder onstop error:', error);
           setError('녹음 완료 중 오류가 발생했습니다.');
         }
       };
@@ -224,7 +224,7 @@ const useRecorder = () => {
 
         // Handle error case
         mediaRecorderRef.current.onerror = (error) => {
-          console.error('MediaRecorder error during stop:', error);
+          console.error('MediaRecorder stop error:', error);
           resolve(audioBlob); // Still resolve with the blob we have
         };
 
@@ -273,11 +273,11 @@ const useRecorder = () => {
           audioUrlRef.current = URL.createObjectURL(audioData);
           return audioUrlRef.current;
         } else {
-          console.warn('Invalid audio blob:', { audioData, size: audioData?.size });
+          console.warn('Invalid audio blob detected:', { audioData, size: audioData?.size });
           return null;
         }
       } catch (error) {
-        console.error('Error creating audio URL:', error);
+        console.error('Audio URL creation failed:', error);
         return null;
       }
     }

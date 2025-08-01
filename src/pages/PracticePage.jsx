@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useRecorder from '../hooks/useRecorder';
 // useWhisper는 ResultsPage에서만 사용
 import ConfirmDialog from '../components/ConfirmDialog';
 import styles from './PracticePage.module.css';
 
-// Rolling highlight component for sight translation
-const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySettings }) => {
+// Rolling highlight component for sight translation - Optimized with React.memo
+const RollingText = React.memo(({ text, speed, isPlaying, onComplete, onProgress, displaySettings }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [words, setWords] = useState([]);
   const intervalRef = useRef(null);
@@ -38,13 +38,16 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
     }
   }, [currentIndex, fontSize]);
 
-  // 현재 단어가 항상 보이도록 스크롤
+  // 현재 단어가 항상 보이도록 스크롤 - Optimized with requestAnimationFrame
   useEffect(() => {
     if (textContentRef.current && words.length > 0) {
-      const currentWordElement = textContentRef.current.querySelector(`.${styles.current}`);
-      if (currentWordElement) {
-        currentWordElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      // Use requestAnimationFrame to optimize scroll performance
+      requestAnimationFrame(() => {
+        const currentWordElement = textContentRef.current?.querySelector(`.word-${currentIndex}`);
+        if (currentWordElement) {
+          currentWordElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
     }
   }, [currentIndex, words]);
 
@@ -98,7 +101,10 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
     }
   }, [currentIndex, words.length, onComplete, onProgress]);
 
-  const getHighlightedText = () => {
+  // Memoize highlighted text to prevent unnecessary re-renders
+  const highlightedText = useMemo(() => {
+    if (words.length === 0) return null;
+    
     // 현재 단어를 중앙에 배치하는 윈도우 방식
     const halfWindow = Math.floor(windowSize / 2);
     let startIndex = Math.max(0, currentIndex - halfWindow);
@@ -135,37 +141,54 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
         })}
       </span>
     );
-  };
+  }, [words, currentIndex, windowSize, fontSize, textColor, highlightRange]);
+
+  // Memoize progress calculation - Fix React Hooks Rule violation
+  const progressPercentage = useMemo(() => 
+    Math.round((currentIndex / words.length) * 100), 
+    [currentIndex, words.length]
+  );
 
   return (
     <div className={styles.rollingText}>
       <div className={styles.textContent} ref={textContentRef}>
-        {getHighlightedText()}
+        {highlightedText}
         {onProgress && (
           <div className={styles.progressIndicator}>
-            {Math.round((currentIndex / words.length) * 100)}%
+            {progressPercentage}%
           </div>
         )}
       </div>
     </div>
   );
-};
+});
 
 function PracticePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const practiceData = location.state;
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [mediaUrl, setMediaUrl] = useState(null);
-  const [currentSpeed, setCurrentSpeed] = useState(practiceData?.speed || 1.0);
-  const [restartKey, setRestartKey] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [enableRecording, setEnableRecording] = useState(false); // 녹음 활성화 상태
-  const [autoStopTimeout, setAutoStopTimeout] = useState(null); // 자동 중지 타이머
-  const [showDisplaySettings, setShowDisplaySettings] = useState(true); // 텍스트 표시 설정 펼치기/접기
+  // Grouped state for better organization - Playback controls
+  const [playbackState, setPlaybackState] = useState({
+    isPlaying: false,
+    isCompleted: false,
+    progress: 0,
+    currentSpeed: practiceData?.speed || 1.0,
+    restartKey: 0
+  });
+
+  // Media and recording state
+  const [mediaState, setMediaState] = useState({
+    mediaUrl: null,
+    enableRecording: false,
+    autoStopTimeout: null
+  });
+
+  // UI state
+  const [uiState, setUiState] = useState({
+    showConfirmDialog: false,
+    showDisplaySettings: true
+  });
 
   // 텍스트 표시 설정
   const [displaySettings, setDisplaySettings] = useState({
@@ -174,6 +197,59 @@ function PracticePage() {
     textColor: '#000000',  // 텍스트 색상
     highlightRange: 2      // 강조 범위 (0=현재만, 1=현재±1, 2=현재±2)
   });
+
+  // Convenience getters for backward compatibility
+  const isPlaying = playbackState.isPlaying;
+  const isCompleted = playbackState.isCompleted;
+  const progress = playbackState.progress;
+  const currentSpeed = playbackState.currentSpeed;
+  const restartKey = playbackState.restartKey;
+  const mediaUrl = mediaState.mediaUrl;
+  const enableRecording = mediaState.enableRecording;
+  const autoStopTimeout = mediaState.autoStopTimeout;
+  const showConfirmDialog = uiState.showConfirmDialog;
+  const showDisplaySettings = uiState.showDisplaySettings;
+
+  // Convenience setters for backward compatibility
+  const setIsPlaying = useCallback((value) => {
+    setPlaybackState(prev => ({ ...prev, isPlaying: value }));
+  }, []);
+  
+  const setIsCompleted = useCallback((value) => {
+    setPlaybackState(prev => ({ ...prev, isCompleted: value }));
+  }, []);
+  
+  const setProgress = useCallback((value) => {
+    setPlaybackState(prev => ({ ...prev, progress: value }));
+  }, []);
+  
+  const setCurrentSpeed = useCallback((value) => {
+    setPlaybackState(prev => ({ ...prev, currentSpeed: value }));
+  }, []);
+  
+  const setRestartKey = useCallback((value) => {
+    setPlaybackState(prev => ({ ...prev, restartKey: value }));
+  }, []);
+  
+  const setMediaUrl = useCallback((value) => {
+    setMediaState(prev => ({ ...prev, mediaUrl: value }));
+  }, []);
+  
+  const setEnableRecording = useCallback((value) => {
+    setMediaState(prev => ({ ...prev, enableRecording: value }));
+  }, []);
+  
+  const setAutoStopTimeout = useCallback((value) => {
+    setMediaState(prev => ({ ...prev, autoStopTimeout: value }));
+  }, []);
+  
+  const setShowConfirmDialog = useCallback((value) => {
+    setUiState(prev => ({ ...prev, showConfirmDialog: value }));
+  }, []);
+  
+  const setShowDisplaySettings = useCallback((value) => {
+    setUiState(prev => ({ ...prev, showDisplaySettings: value }));
+  }, []);
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);

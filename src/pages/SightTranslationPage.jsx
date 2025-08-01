@@ -9,7 +9,7 @@ function SightTranslationPage() {
   const navigate = useNavigate();
   const [inputText, setInputText] = useState('');
   const [selectedSample, setSelectedSample] = useState('');
-  const [speed, setSpeed] = useState(1.0);
+  const [speed] = useState(1.0);
   const [useCustomText, setUseCustomText] = useState(true);
 
   const handleSampleSelect = (sampleId) => {
