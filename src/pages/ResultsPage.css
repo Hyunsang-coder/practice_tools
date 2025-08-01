@@ -382,8 +382,9 @@
 /* 고정 평가 기준 */
 .fixed-criteria {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .criterion-item {
@@ -395,6 +396,8 @@
   border: 2px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   transition: all 0.3s ease;
+  flex: 1;
+  min-width: 250px;
 }
 
 .criterion-item:hover {
@@ -436,8 +439,9 @@
 /* 평가 상세도 옵션 */
 .detail-options {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .detail-radio {
@@ -450,6 +454,8 @@
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.3s ease;
+  flex: 1;
+  min-width: 200px;
 }
 
 .detail-radio:hover {
@@ -652,9 +658,32 @@
   line-height: 1.6;
   color: var(--color-text-medium);
   min-height: 200px;
+  max-height: 400px;
   white-space: pre-wrap;
   word-break: break-word;
   flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 스크롤바 스타일링 */
+.text-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.text-content::-webkit-scrollbar-track {
+  background: var(--color-background-light);
+  border-radius: 4px;
+}
+
+.text-content::-webkit-scrollbar-thumb {
+  background: var(--color-border-light);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.text-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-light);
 }
 
 .text-info {
@@ -680,5 +709,25 @@
 @media (max-width: 900px) {
   .text-comparison-section {
     grid-template-columns: 1fr;
+  }
+
+  .text-content {
+    max-height: 300px;
+  }
+
+  .fixed-criteria {
+    flex-direction: column;
+  }
+
+  .criterion-item {
+    min-width: auto;
+  }
+
+  .detail-options {
+    flex-direction: column;
+  }
+
+  .detail-radio {
+    min-width: auto;
   }
 }

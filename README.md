@@ -4,7 +4,7 @@ React + Vite로 구축된 브라우저 기반 한영 통역 연습 애플리케�
 
 ## ✨ 주요 기능
 
-- **🔤 시역 (Sight Translation)**: 한국어 텍스트를 보며 실시간 영어 통역 연습
+- **🔤 문장 구역 (Sight Translation)**: 한국어 텍스트를 보며 실시간 영어 통역 연습
 - **🎧 동시통역 (Simultaneous Interpretation)**: 오디오/비디오 파일을 들으며 동시통역 연습
 - **🎙️ 음성 녹음**: Web Audio API를 활용한 실시간 녹음
 - **📝 AI 전사**: OpenAI Whisper API를 통한 음성-텍스트 변환

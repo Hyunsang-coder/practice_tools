@@ -163,7 +163,7 @@ function ResultsPage() {
       }[evaluationDetail];
 
       const evaluationContent = `=== 통역 연습 평가 요청 ===
-연습 모드: ${mode === 'sight-translation' ? '시역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
+연습 모드: ${mode === 'sight-translation' ? '문장 구역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
 날짜: ${new Date().toLocaleString('ko-KR')}
 ${practiceSettings?.speed ? `속도: ${practiceSettings.speed} WPM` : ''}
 ${practiceSettings?.duration ? `녹음 시간: ${practiceSettings.duration}` : ''}
@@ -280,11 +280,11 @@ ${window.location.origin}
       const detailText = {
         'brief': '간략한 전반적인 피드백',
         'detailed': '구체적인 피드백과 개선 방향 제시',
-        'very-detailed': '문장 단위로 개선 제안 및 개선안 제시'
+        'very-detailed': '문장 단위 피드백 및 개선안 제시'
       }[evaluationDetail];
 
       const evaluationContent = `=== 통역 연습 평가 요청 ===
-연습 모드: ${mode === 'sight-translation' ? '시역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
+연습 모드: ${mode === 'sight-translation' ? '문장 구역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
 날짜: ${new Date().toLocaleString('ko-KR')}
 ${practiceSettings?.speed ? `속도: ${practiceSettings.speed} WPM` : ''}
 ${practiceSettings?.duration ? `녹음 시간: ${practiceSettings.duration}` : ''}
@@ -353,7 +353,7 @@ ${window.location.origin}
         <div className="header-content">
           <h1>연습 결과</h1>
           <p>
-            {resultsData.mode === 'sight-translation' ? '시역 연습' : '동시통역 연습'} 결과를 확인하세요
+            {resultsData.mode === 'sight-translation' ? '문장 구역 연습' : '동시통역 연습'} 결과를 확인하세요
           </p>
         </div>
         <div className="header-actions">
@@ -491,8 +491,8 @@ ${window.location.origin}
             <div className="detail-options">
               {[
                 { key: 'brief', label: '간략한 피드백', desc: '전반적인 피드백과 핵심 포인트' },
-                { key: 'detailed', label: '상세한 피드백', desc: '구체적인 피드백과 개선 방향 제시' },
-                { key: 'very-detailed', label: '매우 상세한 피드백', desc: '문장 단위 개선 제안 및 개선안 제시' }
+                { key: 'detailed', label: '상세한 피드백', desc: '구체적인 피드백과 개선안 제시' },
+                { key: 'very-detailed', label: '매우 상세한 피드백', desc: '문장 단위 피드백 및 대안 제시' }
               ].map(detail => (
                 <label key={detail.key} className="detail-radio">
                   <input

@@ -12,7 +12,7 @@ function HomePage() {
           한-영 통역 연습을 위한 전문 훈련 도구
         </p>
         <p className="description">
-          시역과 동시통역 연습을 브라우저에서 바로 시작하세요.
+          문장 구역과 동시통역 연습을 브라우저에서 바로 시작하세요.
           AI 기반 음성-텍스트 변환으로 정확한 피드백을 받을 수 있습니다.
         </p>
       </header>
@@ -20,7 +20,7 @@ function HomePage() {
       <main className="mode-selection">
         <div className="mode-cards">
           <div className="mode-card">
-            <h2>시역 (Sight Translation)</h2>
+            <h2>문장 구역 (Sight Translation)</h2>
             <p>
               텍스트를 보며 실시간으로 통역하는 연습입니다.
               롤링 하이라이트 기능으로 자연스러운 속도를 유지할 수 있습니다.
@@ -34,7 +34,7 @@ function HomePage() {
               className="mode-button sight-button"
               onClick={() => navigate('/sight-translation')}
             >
-              시역 모드 시작하기
+              문장 구역 모드 시작하기
             </button>
           </div>
 

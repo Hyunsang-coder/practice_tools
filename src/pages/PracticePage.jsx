@@ -308,7 +308,7 @@ function PracticePage() {
         setIsPlaying(!isPlaying);
       }
     } else {
-      // 시역 연습의 경우: 첫 시작, 재개, 일시정지 처리
+      // 문장 구역 연습의 경우: 첫 시작, 재개, 일시정지 처리
       if (isPlaying) {
         // 연습 중이면 일시정지
         handlePausePractice();
@@ -422,7 +422,7 @@ function PracticePage() {
           ← 뒤로 가기
         </button>
         <h1>
-          {practiceData.mode === 'sight-translation' ? '시역 연습' : '동시통역 연습'}
+          {practiceData.mode === 'sight-translation' ? '문장 구역 연습' : '동시통역 연습'}
         </h1>
         <div className={styles.practiceStatus}>
           {isRecording && (
@@ -492,7 +492,7 @@ function PracticePage() {
                 <div className={styles.settingsContent}>
                   <div className={styles.settingGroup}>
                     <label className={styles.settingLabel}>
-                      페이싱 속도: <span className={styles.settingValue}>{currentSpeed}배 ({Math.round(100 * currentSpeed)} WPM)</span>
+                      롤링 속도: <span className={styles.settingValue}>{currentSpeed}배 ({Math.round(100 * currentSpeed)} WPM)</span>
                     </label>
                     <input
                       type="range"
@@ -504,9 +504,9 @@ function PracticePage() {
                       className={styles.settingSlider}
                     />
                     <div className={styles.settingMarkers}>
-                      <span>0.5배</span>
-                      <span>1.0배</span>
-                      <span>1.5배</span>
+                      <span>0.5</span>
+                      <span>1.0</span>
+                      <span>1.5</span>
                     </div>
                   </div>
 
@@ -527,9 +527,9 @@ function PracticePage() {
                       className={styles.settingSlider}
                     />
                     <div className={styles.settingMarkers}>
-                      <span>6개</span>
-                      <span>12개</span>
-                      <span>18개</span>
+                      <span>6</span>
+                      <span>12</span>
+                      <span>18</span>
                     </div>
                   </div>
 
@@ -550,9 +550,9 @@ function PracticePage() {
                       className={styles.settingSlider}
                     />
                     <div className={styles.settingMarkers}>
-                      <span>1.5rem</span>
-                      <span>2.0rem</span>
-                      <span>2.5rem</span>
+                      <span>1.5</span>
+                      <span>2.0</span>
+                      <span>2.5</span>
                     </div>
                   </div>
 
@@ -608,9 +608,9 @@ function PracticePage() {
                       className={styles.settingSlider}
                     />
                     <div className={styles.settingMarkers}>
-                      <span>현재만</span>
-                      <span>±2개</span>
-                      <span>±4개</span>
+                      <span>0</span>
+                      <span>2</span>
+                      <span>4</span>
                     </div>
                   </div>
                 </div>

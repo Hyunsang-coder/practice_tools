@@ -643,10 +643,13 @@
 .setting-markers {
   display: flex;
   justify-content: space-between;
-  max-width: 300px;
+  width: 100%;
+  max-width: 280px;
   margin: 0 auto;
-  font-size: var(--font-size-sm);
+  padding: 0 4px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-light);
+  font-weight: 500;
 }
 
 .color-options {
