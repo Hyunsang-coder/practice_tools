@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
 import useMp3Converter from '../hooks/useMp3Converter';
@@ -13,6 +13,8 @@ function ResultsPage() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [showConversionDialog, setShowConversionDialog] = useState(false);
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   // MP3 변환 훅
   const {
@@ -89,6 +91,23 @@ function ResultsPage() {
       setTranscriptionError(null);
     };
   }, [resultsData]);
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDownloadDropdown(false);
+      }
+    };
+
+    if (showDownloadDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDownloadDropdown]);
 
   // 평가 패키지 다운로드 기능
 
@@ -191,6 +210,119 @@ ${window.location.origin}
     }
   }, [resultsData, evaluationDetail, additionalContext, convertToMp3]);
 
+  // 녹음 파일만 다운로드 (MP3 변환)
+  const downloadAudioFile = useCallback(async () => {
+    if (!resultsData?.audioData) return;
+
+    setIsExporting(true);
+
+    try {
+      let finalAudioData = resultsData.audioData;
+      let audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.webm`;
+
+      // MP3 변환 수행
+      setShowConversionDialog(true);
+
+      try {
+        const mp3Blob = await convertToMp3(resultsData.audioData);
+        if (mp3Blob) {
+          finalAudioData = mp3Blob;
+          audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.mp3`;
+        }
+      } catch (err) {
+        console.error('MP3 conversion failed, using original format:', err);
+        // Continue with original audio if conversion fails
+      }
+
+      setShowConversionDialog(false);
+
+      // 오디오 파일 직접 다운로드
+      const audioUrl = URL.createObjectURL(finalAudioData);
+      const audioLink = document.createElement('a');
+      audioLink.href = audioUrl;
+      audioLink.download = audioFileName;
+      document.body.appendChild(audioLink);
+      audioLink.click();
+      document.body.removeChild(audioLink);
+      URL.revokeObjectURL(audioUrl);
+
+    } catch (error) {
+      console.error('Audio download error:', error);
+      alert('녹음 파일 다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [resultsData, convertToMp3]);
+
+  // 평가용 텍스트 다운로드
+  const downloadEvaluationText = useCallback(async () => {
+    if (!resultsData) return;
+
+    setIsExporting(true);
+
+    try {
+      const { originalText, practiceSettings, mode } = resultsData;
+
+      // 고정된 평가 기준
+      const criteriaText = `- Accuracy & Coverage: 내용 전달의 정확성과 완성도
+- Delivery & Performance: 발표 속도, 유창함, 전달력  
+- Natural Language: 언어의 자연스러움과 적절성`;
+
+      const detailText = {
+        'brief': '간략한 전반적인 피드백',
+        'detailed': '구체적인 피드백과 개선 방향 제시',
+        'very-detailed': '문장 단위로 개선 제안 및 개선안 제시'
+      }[evaluationDetail];
+
+      const evaluationContent = `=== 통역 연습 평가 요청 ===
+연습 모드: ${mode === 'sight-translation' ? '시역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
+날짜: ${new Date().toLocaleString('ko-KR')}
+${practiceSettings?.speed ? `속도: ${practiceSettings.speed} WPM` : ''}
+${practiceSettings?.duration ? `녹음 시간: ${practiceSettings.duration}` : ''}
+
+=== 원본 텍스트(한국어) ===
+${originalText || '원본 텍스트가 없습니다.'}
+
+=== 통역 텍스트 ===
+${transcribedText || '전사된 텍스트가 없습니다. 먼저 "전사하기" 버튼을 클릭해주세요.'}
+
+=== 평가 요청 ===
+위의 원본 텍스트와 통역 텍스트를 비교하여 다음 기준으로 평가해주세요:
+
+평가 기준:
+${criteriaText}
+
+평가 상세도: ${detailText}
+
+${additionalContext ? `Glossary/추가 맥락:\n${additionalContext}\n\n` : ''}각 항목별 점수와 구체적인 피드백을 부탁드립니다.
+
+---
+Interpreter's Playground에서 생성됨
+${window.location.origin}
+`;
+
+      // 텍스트 파일 생성 및 다운로드
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const textFileName = `evaluation_request_${timestamp}.txt`;
+
+      const textBlob = new Blob([evaluationContent], { type: 'text/plain;charset=utf-8' });
+      const textUrl = URL.createObjectURL(textBlob);
+      const textLink = document.createElement('a');
+      textLink.href = textUrl;
+      textLink.download = textFileName;
+      document.body.appendChild(textLink);
+      textLink.click();
+      document.body.removeChild(textLink);
+      URL.revokeObjectURL(textUrl);
+
+    } catch (error) {
+      console.error('Text download error:', error);
+      alert('평가용 텍스트 다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [resultsData, evaluationDetail, additionalContext, transcribedText]);
+
   // 평가 상세도 변경 핸들러
   const handleDetailChange = useCallback((detail) => {
     setEvaluationDetail(detail);
@@ -216,13 +348,39 @@ ${window.location.origin}
           </p>
         </div>
         <div className="header-actions">
-          <button
-            className={`download-button ${!resultsData?.audioData ? 'disabled' : ''}`}
-            onClick={downloadEvaluationPackage}
-            disabled={isExporting || isConverting || !resultsData?.audioData}
-          >
-            {isConverting ? 'MP3 변환 중...' : isExporting ? '다운로드 중...' : '📦 평가용 파일 다운로드 (MP3)'}
-          </button>
+          <div className="download-dropdown-wrapper" ref={dropdownRef}>
+            <button
+              className={`download-button ${!resultsData?.audioData ? 'disabled' : ''}`}
+              onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+              disabled={isExporting || isConverting || !resultsData?.audioData}
+            >
+              {isConverting ? 'MP3 변환 중...' : isExporting ? '다운로드 중...' : '📥 다운로드'}
+              <span className="dropdown-arrow">▼</span>
+            </button>
+
+            {showDownloadDropdown && !isExporting && !isConverting && resultsData?.audioData && (
+              <div className="download-dropdown-menu">
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowDownloadDropdown(false);
+                    downloadAudioFile();
+                  }}
+                >
+                  🎵 녹음 파일 다운로드 (MP3)
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowDownloadDropdown(false);
+                    downloadEvaluationText();
+                  }}
+                >
+                  📄 평가용 텍스트 다운로드
+                </button>
+              </div>
+            )}
+          </div>
           <button
             className="home-button"
             onClick={() => navigate('/')}
