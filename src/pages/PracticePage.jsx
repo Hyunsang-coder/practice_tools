@@ -15,8 +15,8 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
   // 기본 설정값
   const {
     windowSize = 12,           // 한 번에 보여줄 단어 수
-    highlightRange = 2,        // 현재 단어 주변 하이라이트 범위
-    fontSize = 2.5             // 폰트 크기 (rem)
+    fontSize = 2.0,            // 폰트 크기 (rem)
+    textColor = '#000000'      // 텍스트 색상
   } = displaySettings || {};
 
   useEffect(() => {
@@ -32,9 +32,20 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
     if (textContentRef.current) {
       const container = textContentRef.current;
       // 스크롤을 항상 최상단으로 고정
-      container.scrollTop = 0;
+      // container.scrollTop = 0; // 이 부분을 제거하여 강제 스크롤 방지
+      container.style.fontSize = `${fontSize}rem`; // 폰트 크기 실시간 적용
     }
-  }, [currentIndex]);
+  }, [currentIndex, fontSize]);
+
+  // 현재 단어가 항상 보이도록 스크롤
+  useEffect(() => {
+    if (textContentRef.current && words.length > 0) {
+      const currentWordElement = textContentRef.current.querySelector(`.${styles.current}`);
+      if (currentWordElement) {
+        currentWordElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentIndex, words]);
 
   useEffect(() => {
     if (isPlaying && words.length > 0) {
@@ -94,24 +105,24 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress, displaySe
     const visibleWords = words.slice(startIndex, endIndex);
 
     return (
-      <span className={styles.textWrapper} >
+      <span className={styles.textWrapper} style={{ fontSize: `${fontSize}rem`, color: textColor }}>
         {visibleWords.map((word, localIndex) => {
           const globalIndex = startIndex + localIndex;
           let className = `${styles.word} word-${globalIndex}`;
 
           // 현재 단어와 주변 단어들 하이라이트
-          if (globalIndex >= currentIndex - highlightRange && globalIndex <= currentIndex + highlightRange) {
-            className += ` ${styles.highlighted}`;
-          }
-          if (globalIndex === currentIndex) {
-            className += ` ${styles.current}`;
-          }
+          // if (globalIndex >= currentIndex - highlightRange && globalIndex <= currentIndex + highlightRange) {
+          //   className += ` ${styles.highlighted}`;
+          // }
+          // if (globalIndex === currentIndex) {
+          //   className += ` ${styles.current}`;
+          // }
           if (globalIndex < currentIndex) {
             className += ` ${styles.passed}`;
           }
 
           return (
-            <span key={globalIndex} className={className}>
+            <span key={globalIndex} className={className} style={{ color: textColor }}>
               {word}
               {localIndex < visibleWords.length - 1 ? ' ' : ''}
             </span>
@@ -147,14 +158,15 @@ function PracticePage() {
   const [restartKey, setRestartKey] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [enableRecording, setEnableRecording] = useState(true); // 녹음 활성화 상태
+  const [enableRecording, setEnableRecording] = useState(false); // 녹음 활성화 상태
   const [autoStopTimeout, setAutoStopTimeout] = useState(null); // 자동 중지 타이머
+  const [showDisplaySettings, setShowDisplaySettings] = useState(true); // 텍스트 표시 설정 펼치기/접기
 
   // 텍스트 표시 설정
   const [displaySettings, setDisplaySettings] = useState({
     windowSize: 12,        // 한 번에 보여줄 단어 수
-    highlightRange: 2,     // 현재 단어 주변 하이라이트 범위
-    fontSize: 2.5          // 폰트 크기 (rem)
+    fontSize: 2.0,         // 폰트 크기 (rem)
+    textColor: '#000000'   // 텍스트 색상
   });
 
   const videoRef = useRef(null);
@@ -462,103 +474,117 @@ function PracticePage() {
 
         <div className={styles.controlsArea}>
           {practiceData.mode === 'sight-translation' && (
-            <>
-              <div className={styles.speedControl}>
-                <label className={styles.speedLabel}>
-                  페이싱 속도: {currentSpeed}배 ({Math.round(100 * currentSpeed)} WPM)
-                </label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="1.5"
-                  step="0.1"
-                  value={currentSpeed}
-                  onChange={(e) => setCurrentSpeed(parseFloat(e.target.value))}
-                  className={styles.speedSlider}
-                />
-                <div className={styles.speedMarkers}>
-                  <span>0.5배</span>
-                  <span>1.0배</span>
-                  <span>1.5배</span>
-                </div>
-              </div>
+            <div className={styles.displaySettings}>
+              <h3
+                className={styles.settingsTitle}
+                onClick={() => setShowDisplaySettings(!showDisplaySettings)}
+                style={{ cursor: 'pointer' }}
+              >
+                텍스트 표시 설정 <span className={styles.toggleIcon}>{showDisplaySettings ? '▲' : '▼'}</span>
+              </h3>
+              {showDisplaySettings && (
+                <div className={styles.settingsContent}>
+                  <div className={styles.settingGroup}>
+                    <label className={styles.settingLabel}>
+                      페이싱 속도: <span className={styles.settingValue}>{currentSpeed}배 ({Math.round(100 * currentSpeed)} WPM)</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="1.5"
+                      step="0.1"
+                      value={currentSpeed}
+                      onChange={(e) => setCurrentSpeed(parseFloat(e.target.value))}
+                      className={styles.settingSlider}
+                    />
+                    <div className={styles.settingMarkers}>
+                      <span>0.5배</span>
+                      <span>1.0배</span>
+                      <span>1.5배</span>
+                    </div>
+                  </div>
 
-              <div className={styles.displaySettings}>
-                <h3 className={styles.settingsTitle}>텍스트 표시 설정</h3>
+                  <div className={styles.settingGroup}>
+                    <label className={styles.settingLabel}>
+                      한 줄에 보이는 단어 수: <span className={styles.settingValue}>{displaySettings.windowSize}개</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="6"
+                      max="20"
+                      step="1"
+                      value={displaySettings.windowSize}
+                      onChange={(e) => setDisplaySettings(prev => ({
+                        ...prev,
+                        windowSize: parseInt(e.target.value)
+                      }))}
+                      className={styles.settingSlider}
+                    />
+                    <div className={styles.settingMarkers}>
+                      <span>6개</span>
+                      <span>12개</span>
+                      <span>20개</span>
+                    </div>
+                  </div>
 
-                <div className={styles.settingGroup}>
-                  <label className={styles.settingLabel}>
-                    한 줄에 보이는 단어 수: <span className={styles.settingValue}>{displaySettings.windowSize}개</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="6"
-                    max="20"
-                    step="1"
-                    value={displaySettings.windowSize}
-                    onChange={(e) => setDisplaySettings(prev => ({
-                      ...prev,
-                      windowSize: parseInt(e.target.value)
-                    }))}
-                    className={styles.settingSlider}
-                  />
-                  <div className={styles.settingMarkers}>
-                    <span>6개</span>
-                    <span>12개</span>
-                    <span>20개</span>
+                  <div className={styles.settingGroup}>
+                    <label className={styles.settingLabel}>
+                      폰트 크기: <span className={styles.settingValue}>{displaySettings.fontSize}rem</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="1.5"
+                      max="4.0"
+                      step="0.1"
+                      value={displaySettings.fontSize}
+                      onChange={(e) => setDisplaySettings(prev => ({
+                        ...prev,
+                        fontSize: parseFloat(e.target.value)
+                      }))}
+                      className={styles.settingSlider}
+                    />
+                    <div className={styles.settingMarkers}>
+                      <span>1.5rem</span>
+                      <span>2.5rem</span>
+                      <span>4.0rem</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.settingGroup}>
+                    <label className={styles.settingLabel}>
+                      텍스트 색상
+                    </label>
+                    <div className={styles.colorOptions}>
+                      {['#000000', '#333333', '#0066CC', '#CC6600', '#CC0000'].map(color => (
+                        <button
+                          key={color}
+                          className={`${styles.colorButton} ${displaySettings.textColor === color ? styles.colorButtonActive : ''}`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setDisplaySettings(prev => ({
+                            ...prev,
+                            textColor: color
+                          }))}
+                          title={color}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={displaySettings.textColor}
+                        onChange={(e) => setDisplaySettings(prev => ({
+                          ...prev,
+                          textColor: e.target.value
+                        }))}
+                        className={styles.colorPicker}
+                        title="사용자 정의 색상"
+                      />
+                    </div>
                   </div>
                 </div>
-
-                <div className={styles.settingGroup}>
-                  <label className={styles.settingLabel}>
-                    하이라이트 범위: <span className={styles.settingValue}>{displaySettings.highlightRange}개 단어</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    step="1"
-                    value={displaySettings.highlightRange}
-                    onChange={(e) => setDisplaySettings(prev => ({
-                      ...prev,
-                      highlightRange: parseInt(e.target.value)
-                    }))}
-                    className={styles.settingSlider}
-                  />
-                  <div className={styles.settingMarkers}>
-                    <span>1개</span>
-                    <span>3개</span>
-                    <span>5개</span>
-                  </div>
-                </div>
-
-                <div className={styles.settingGroup}>
-                  <label className={styles.settingLabel}>
-                    폰트 크기: <span className={styles.settingValue}>{displaySettings.fontSize}rem</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="1.5"
-                    max="4.0"
-                    step="0.1"
-                    value={displaySettings.fontSize}
-                    onChange={(e) => setDisplaySettings(prev => ({
-                      ...prev,
-                      fontSize: parseFloat(e.target.value)
-                    }))}
-                    className={styles.settingSlider}
-                  />
-                  <div className={styles.settingMarkers}>
-                    <span>1.5rem</span>
-                    <span>2.5rem</span>
-                    <span>4.0rem</span>
-                  </div>
-                </div>
-              </div>
-            </>
+              )}
+            </div>
           )}
 
-          <div className={styles.recordingControl}>
+          <div className={styles.controlButtons}>
             <label className={styles.recordingCheckbox}>
               <input
                 type="checkbox"
@@ -567,12 +593,10 @@ function PracticePage() {
                 disabled={isPlaying || isRecording}
               />
               <span className={styles.checkboxLabel}>
-                🎙️ 녹음하면서 연습하기
+                🎙️ 녹음
               </span>
             </label>
-          </div>
 
-          <div className={styles.controlButtons}>
             {practiceData.mode === 'sight-translation' && (
               <button
                 className={styles.playPauseButton}
@@ -585,7 +609,6 @@ function PracticePage() {
                         '🏁 연습 시작'}
               </button>
             )}
-
 
             <button
               className={styles.finishButton}
