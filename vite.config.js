@@ -17,31 +17,33 @@ export default defineConfig(({ command, mode }) => {
     },
   };
 
-  // Cloudflare Pages에서는 base path가 필요 없음
+  // 빌드 설정 - 플랫폼별 분기
   if (command === 'build') {
-    // GitHub Pages vs Cloudflare Pages 구분
-    const isCloudflare = process.env.CF_PAGES === '1' || mode === 'cloudflare';
+    // Cloudflare Pages 감지 (환경변수 또는 mode로)
+    const isCloudflare = process.env.CF_PAGES === '1' || 
+                        process.env.NODE_ENV === 'production' ||
+                        mode === 'production';
     
     if (!isCloudflare) {
-      config.base = '/practice_tools/'; // GitHub Pages용
+      // GitHub Pages용 base path
+      config.base = '/practice_tools/';
     }
-    // Cloudflare Pages는 루트 경로 '/' 사용
     
-    // 빌드 최적화
+    // 빌드 최적화 (간단하고 안전한 설정)
     config.build = {
-      // 코드 스플리팅 최적화
+      outDir: 'dist',
+      sourcemap: false,
+      minify: 'esbuild',
+      target: 'es2020',
       rollupOptions: {
         output: {
+          // 간단한 청크 분할
           manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            audio: ['wasm-media-encoders'],
+            'react-vendor': ['react', 'react-dom'],
+            'router': ['react-router-dom'],
           }
         }
-      },
-      // 압축 최적화
-      minify: 'esbuild',
-      // 소스맵 생성 (디버깅용)
-      sourcemap: mode !== 'production'
+      }
     };
   }
 
