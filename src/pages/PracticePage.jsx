@@ -380,7 +380,13 @@ function PracticePage() {
       <header className={styles.practiceHeader}>
         <button
           className={styles.backButton}
-          onClick={() => navigate('/')}
+          onClick={() => {
+            if (practiceData.mode === 'sight-translation') {
+              navigate('/sight-translation');
+            } else {
+              navigate('/simultaneous');
+            }
+          }}
         >
           ← 뒤로 가기
         </button>
