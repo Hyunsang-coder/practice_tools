@@ -82,7 +82,7 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
   const getHighlightedText = () => {
     // 현재 단어 주변의 일정 범위만 표시 (윈도우 방식)
     const windowSize = 12; // 한 번에 보여줄 단어 수
-    const startIndex = Math.max(0, currentIndex - Math.floor(windowSize / 3));
+    const startIndex = Math.max(0, currentIndex - Math.floor(windowSize / 5));
     const endIndex = Math.min(words.length, startIndex + windowSize);
 
     const visibleWords = words.slice(startIndex, endIndex);

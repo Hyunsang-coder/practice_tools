@@ -155,3 +155,7 @@ npm run preview
 ## Development Strategies
 
 - 직접 개발 서버 실행하지 않고 사용자에게 테스트 권유.
+
+## Git Workflow Notes
+
+- 변경후 git push는 하지 않기.
