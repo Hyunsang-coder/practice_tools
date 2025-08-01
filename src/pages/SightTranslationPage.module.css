@@ -64,7 +64,7 @@
 .sight-translation-page {
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, var(--color-background-main-start) 0%, var(--color-background-main-end) 100%);
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   color: var(--color-text-dark);
   padding: var(--spacing-8);
   overflow-y: auto;
@@ -81,20 +81,22 @@
   position: absolute;
   left: 0;
   top: 0;
-  background: var(--color-background-white);
-  border: 1px solid var(--color-border-light);
-  color: var(--color-text-medium);
+  background: #6b7280;
+  border: none;
+  color: white;
   padding: var(--spacing-3) var(--spacing-6);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: var(--font-size-base);
+  font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: var(--shadow-sm);
 }
 
 .back-button:hover {
-  background: var(--color-background-light);
+  background: #4b5563;
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .page-header h1 {
@@ -125,7 +127,8 @@
 
 .text-selection-section h2,
 .settings-section h2 {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
   margin-bottom: var(--spacing-6);
   color: var(--color-text-dark);
 }
@@ -146,6 +149,8 @@
   padding: var(--spacing-3) var(--spacing-4);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
   transition: background-color 0.3s ease;
 }
 

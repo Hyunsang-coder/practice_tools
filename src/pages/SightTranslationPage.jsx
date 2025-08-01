@@ -65,7 +65,7 @@ function SightTranslationPage() {
           className={styles.backButton}
           onClick={() => navigate('/')}
         >
-          ← 홈으로
+          🏠 홈으로
         </button>
         <h1>시역 연습 준비</h1>
         <p>연습할 텍스트와 설정을 선택하세요</p>
