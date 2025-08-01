@@ -31,9 +31,14 @@ function SightTranslationPage() {
       return;
     }
 
+    // 텍스트 정리: 불필요한 공백, 줄바꿈, 탭 제거
+    const cleanedText = inputText
+      .replace(/\s+/g, ' ')  // 연속된 공백을 하나로
+      .trim();               // 앞뒤 공백 제거
+
     const practiceData = {
       mode: 'sight-translation',
-      text: inputText,
+      text: cleanedText,
       speed: speed,
       speedWpm: BASE_WPM * speed
     };

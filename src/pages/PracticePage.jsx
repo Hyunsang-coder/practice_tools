@@ -172,7 +172,7 @@ function PracticePage() {
     windowSize: 12,        // 한 번에 보여줄 단어 수
     fontSize: 2.0,         // 폰트 크기 (rem)
     textColor: '#000000',  // 텍스트 색상
-    highlightRange: 0      // 강조 범위 (0=현재만, 1=현재±1, 2=현재±2)
+    highlightRange: 2      // 강조 범위 (0=현재만, 1=현재±1, 2=현재±2)
   });
 
   const videoRef = useRef(null);
@@ -517,7 +517,7 @@ function PracticePage() {
                     <input
                       type="range"
                       min="6"
-                      max="20"
+                      max="18"
                       step="1"
                       value={displaySettings.windowSize}
                       onChange={(e) => setDisplaySettings(prev => ({
@@ -529,7 +529,7 @@ function PracticePage() {
                     <div className={styles.settingMarkers}>
                       <span>6개</span>
                       <span>12개</span>
-                      <span>20개</span>
+                      <span>18개</span>
                     </div>
                   </div>
 
@@ -540,7 +540,7 @@ function PracticePage() {
                     <input
                       type="range"
                       min="1.5"
-                      max="4.0"
+                      max="2.5"
                       step="0.1"
                       value={displaySettings.fontSize}
                       onChange={(e) => setDisplaySettings(prev => ({
@@ -551,8 +551,8 @@ function PracticePage() {
                     />
                     <div className={styles.settingMarkers}>
                       <span>1.5rem</span>
+                      <span>2.0rem</span>
                       <span>2.5rem</span>
-                      <span>4.0rem</span>
                     </div>
                   </div>
 
@@ -598,7 +598,7 @@ function PracticePage() {
                     <input
                       type="range"
                       min="0"
-                      max="5"
+                      max="4"
                       step="1"
                       value={displaySettings.highlightRange}
                       onChange={(e) => setDisplaySettings(prev => ({
@@ -610,7 +610,7 @@ function PracticePage() {
                     <div className={styles.settingMarkers}>
                       <span>현재만</span>
                       <span>±2개</span>
-                      <span>±5개</span>
+                      <span>±4개</span>
                     </div>
                   </div>
                 </div>
