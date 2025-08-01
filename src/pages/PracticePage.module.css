@@ -533,6 +533,178 @@
   transform: translateY(-2px);
 }
 
+.display-settings {
+  background: var(--color-background-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  display: grid;
+  gap: var(--spacing-6);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* 280px 이상이면 나열 */
+}
+
+.settings-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.setting-group {
+  background: var(--color-background-white);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.setting-group-labels {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-2);
+}
+
+.setting-group-sliders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.setting-label {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.setting-value {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.setting-slider {
+  width: 100%;
+  max-width: 300px;
+  height: 8px;
+  border-radius: var(--radius-slider-track);
+  background: var(--color-border-light);
+  outline: none;
+  margin-bottom: 0.5rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.setting-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  cursor: pointer;
+  border: 2px solid var(--color-background-white);
+  box-shadow: var(--shadow-thumb);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.setting-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.setting-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  cursor: pointer;
+  border: 2px solid var(--color-background-white);
+  box-shadow: var(--shadow-thumb);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.setting-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.setting-markers {
+  display: flex;
+  justify-content: space-between;
+  max-width: 300px;
+  margin: 0 auto;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+.setting-control-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.setting-control-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  min-width: 120px;
+}
+
+.setting-play-pause-button {
+  background: linear-gradient(135deg, var(--color-accent-green), var(--color-accent-green-dark));
+  color: var(--color-text-white);
+}
+
+.setting-play-pause-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-accent-green-dark), var(--color-accent-green-darker));
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+}
+
+.setting-record-button {
+  background: linear-gradient(135deg, var(--color-accent-red), var(--color-accent-red-dark));
+  color: var(--color-text-white);
+}
+
+.setting-record-button.recording {
+  background: linear-gradient(135deg, var(--color-accent-red-dark), var(--color-accent-red-darker));
+  animation: pulse 2s infinite;
+}
+
+.setting-record-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-accent-red-dark), var(--color-accent-red-darker));
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+.setting-finish-button {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: var(--color-text-white);
+}
+
+.setting-finish-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary-darker));
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.setting-control-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (max-width: 768px) {
   .practice-header {
     padding: 1rem;

@@ -160,6 +160,12 @@
   color: var(--color-text-dark);
 }
 
+.text-settings-section-title {
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-dark);
+  text-align: center;
+}
+
 .speed-selection h3,
 .practice-info h3 {
   font-size: var(--font-size-2xl);

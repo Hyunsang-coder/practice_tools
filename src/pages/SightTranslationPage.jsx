@@ -56,7 +56,7 @@ function SightTranslationPage() {
 
       <main className={styles.preparationContent}>
         <div className={styles.textSelectionSection}>
-          <h2>텍스트 선택</h2>
+          <h2 className={styles.textSettingsSectionTitle}>텍스트 표시 설정</h2>
 
           <div className={styles.inputOptions}>
             <div className={styles.optionTabs}>
