@@ -12,7 +12,7 @@ function ResultsPage() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [showConversionDialog, setShowConversionDialog] = useState(false);
-  
+
   // MP3 변환 훅
   const {
     convertToMp3,
@@ -21,19 +21,10 @@ function ResultsPage() {
     error: conversionError,
     resetConverter
   } = useMp3Converter();
-  
+
   // 평가 커스터마이제이션 상태
-  const [evaluationCriteria, setEvaluationCriteria] = useState({
-    accuracy: true,
-    fluency: true,
-    naturalness: true,
-    cultural: false,
-    terminology: false,
-    emotion: false,
-    structure: false
-  });
-  const [evaluationFormat, setEvaluationFormat] = useState('score-feedback');
-  const [additionalRequests, setAdditionalRequests] = useState('');
+  const [evaluationDetail, setEvaluationDetail] = useState('detailed'); // brief, detailed, very-detailed
+  const [additionalContext, setAdditionalContext] = useState(''); // Glossary/맥락
 
   // 평가 패키지 다운로드 기능
   const downloadEvaluationPackage = useCallback(async () => {
@@ -43,14 +34,14 @@ function ResultsPage() {
 
     try {
       const { originalText, practiceSettings, mode } = resultsData;
-      
+
       // MP3 변환 수행
       let finalAudioData = resultsData.audioData;
       let audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.webm`;
-      
+
       if (resultsData.audioData) {
         setShowConversionDialog(true);
-        
+
         try {
           const mp3Blob = await convertToMp3(resultsData.audioData);
           if (mp3Blob) {
@@ -61,31 +52,20 @@ function ResultsPage() {
           console.error('MP3 conversion failed, using original format:', err);
           // Continue with original audio if conversion fails
         }
-        
+
         setShowConversionDialog(false);
       }
 
-      // 평가 기준 텍스트 생성
-      const criteriaText = Object.entries(evaluationCriteria)
-        .filter(([, selected]) => selected)
-        .map(([key]) => {
-          const criteriaNames = {
-            accuracy: '내용 전달 정확성',
-            fluency: '전달 속도와 유창함',
-            naturalness: '언어의 자연스러움',
-            cultural: '문화적 맥락 이해',
-            terminology: '전문용어 정확성',
-            emotion: '감정/톤 전달',
-            structure: '논리적 구조'
-          };
-          return `- ${criteriaNames[key]}`;
-        }).join('\n');
+      // 고정된 평가 기준
+      const criteriaText = `- Accuracy & Coverage: 내용 전달의 정확성과 완성도
+- Delivery & Performance: 발표 속도, 유창함, 전달력  
+- Natural Language: 언어의 자연스러움과 적절성`;
 
-      const formatText = {
-        'score-feedback': '점수 + 피드백 (1-10점 + 상세 코멘트)',
-        'grade': '등급 평가 (A-F + 개선점)',
-        'free-form': '자유형 평가 (전체적인 총평)'
-      }[evaluationFormat];
+      const detailText = {
+        'brief': '간략한 전반적인 피드백',
+        'detailed': '구체적인 피드백과 개선 방향 제시',
+        'very-detailed': '문장 단위로 개선 제안 및 개선안 제시'
+      }[evaluationDetail];
 
       const evaluationContent = `=== 통역 연습 평가 요청 ===
 연습 모드: ${mode === 'sight-translation' ? '시역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
@@ -102,9 +82,9 @@ ${originalText || '원본 텍스트가 없습니다.'}
 평가 기준:
 ${criteriaText}
 
-평가 형식: ${formatText}
+평가 상세도: ${detailText}
 
-${additionalRequests ? `추가 요청사항:\n${additionalRequests}\n\n` : ''}각 항목별 점수와 구체적인 피드백을 부탁드립니다.
+${additionalContext ? `Glossary/추가 맥락:\n${additionalContext}\n\n` : ''}각 항목별 점수와 구체적인 피드백을 부탁드립니다.
 
 ---
 Interpreter's Playground에서 생성됨
@@ -143,19 +123,11 @@ ${window.location.origin}
     } finally {
       setIsExporting(false);
     }
-  }, [resultsData, evaluationCriteria, evaluationFormat, additionalRequests, convertToMp3]);
+  }, [resultsData, evaluationDetail, additionalContext, convertToMp3]);
 
-  // 평가 기준 변경 핸들러
-  const handleCriteriaChange = useCallback((criteriaKey) => {
-    setEvaluationCriteria(prev => ({
-      ...prev,
-      [criteriaKey]: !prev[criteriaKey]
-    }));
-  }, []);
-
-  // 평가 형식 변경 핸들러
-  const handleFormatChange = useCallback((format) => {
-    setEvaluationFormat(format);
+  // 평가 상세도 변경 핸들러
+  const handleDetailChange = useCallback((detail) => {
+    setEvaluationDetail(detail);
   }, []);
 
   if (!resultsData) {
@@ -207,14 +179,18 @@ ${window.location.origin}
         </div>
 
         {/* 녹음 파일 섹션 */}
-        {resultsData.audioUrl && (
-          <div className="audio-section">
-            <h3>🎧 녹음 파일</h3>
-            <div className="audio-player">
+        <div className="audio-section">
+          <h3>🎧 녹음 파일</h3>
+          <div className="audio-player">
+            {resultsData?.audioUrl ? (
               <audio src={resultsData.audioUrl} controls preload="metadata" />
-            </div>
+            ) : resultsData?.audioData ? (
+              <p className="no-audio-message">녹음 파일을 처리 중입니다...</p>
+            ) : (
+              <p className="no-audio-message">녹음 파일이 없습니다.</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* 변환 오류 표시 */}
         {conversionError && (
@@ -232,68 +208,69 @@ ${window.location.origin}
 
         {/* 평가 설정 커스터마이제이션 */}
         <div className="evaluation-settings">
-          <h3>⚙️ 평가 설정 커스터마이제이션</h3>
+          <h3>⚙️ 평가 설정</h3>
 
           <div className="criteria-section">
-            <h4>평가 기준 선택</h4>
-            <div className="criteria-grid">
-              {[
-                { key: 'accuracy', label: '내용 전달 정확성', default: true },
-                { key: 'fluency', label: '전달 속도와 유창함', default: true },
-                { key: 'naturalness', label: '언어의 자연스러움', default: true },
-                { key: 'cultural', label: '문화적 맥락 이해', default: false },
-                { key: 'terminology', label: '전문용어 정확성', default: false },
-                { key: 'emotion', label: '감정/톤 전달', default: false },
-                { key: 'structure', label: '논리적 구조', default: false }
-              ].map(criterion => (
-                <label key={criterion.key} className="criterion-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={evaluationCriteria[criterion.key]}
-                    onChange={() => handleCriteriaChange(criterion.key)}
-                  />
-                  <span className="checkmark"></span>
-                  {criterion.label}
-                  {criterion.default && <span className="default-tag">기본</span>}
-                </label>
-              ))}
+            <h4>📊 평가 기준 (고정)</h4>
+            <div className="fixed-criteria">
+              <div className="criterion-item">
+                <span className="criterion-icon">🎯</span>
+                <div className="criterion-content">
+                  <div className="criterion-title">Accuracy & Coverage</div>
+                  <div className="criterion-desc">내용 전달의 정확성과 완성도</div>
+                </div>
+              </div>
+              <div className="criterion-item">
+                <span className="criterion-icon">🎤</span>
+                <div className="criterion-content">
+                  <div className="criterion-title">Delivery & Performance</div>
+                  <div className="criterion-desc">발표 속도, 유창함, 전달력</div>
+                </div>
+              </div>
+              <div className="criterion-item">
+                <span className="criterion-icon">💬</span>
+                <div className="criterion-content">
+                  <div className="criterion-title">Natural Language</div>
+                  <div className="criterion-desc">언어의 자연스러움과 적절성</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="format-section">
-            <h4>평가 형식</h4>
-            <div className="format-options">
+          <div className="detail-section">
+            <h4>📋 평가 상세도</h4>
+            <div className="detail-options">
               {[
-                { key: 'score-feedback', label: '점수 + 피드백', desc: '1-10점 + 상세 코멘트' },
-                { key: 'grade', label: '등급 평가', desc: 'A-F + 개선점' },
-                { key: 'free-form', label: '자유형 평가', desc: '전체적인 총평' }
-              ].map(format => (
-                <label key={format.key} className="format-radio">
+                { key: 'brief', label: '간략한 피드백', desc: '전반적인 피드백과 핵심 포인트' },
+                { key: 'detailed', label: '상세한 피드백', desc: '구체적인 피드백과 개선 방향 제시' },
+                { key: 'very-detailed', label: '매우 상세한 피드백', desc: '문장 단위 개선 제안 및 개선안 제시' }
+              ].map(detail => (
+                <label key={detail.key} className="detail-radio">
                   <input
                     type="radio"
-                    name="evaluationFormat"
-                    value={format.key}
-                    checked={evaluationFormat === format.key}
-                    onChange={() => handleFormatChange(format.key)}
+                    name="evaluationDetail"
+                    value={detail.key}
+                    checked={evaluationDetail === detail.key}
+                    onChange={() => handleDetailChange(detail.key)}
                   />
                   <span className="radio-button"></span>
-                  <div className="format-info">
-                    <div className="format-label">{format.label}</div>
-                    <div className="format-desc">{format.desc}</div>
+                  <div className="detail-info">
+                    <div className="detail-label">{detail.label}</div>
+                    <div className="detail-desc">{detail.desc}</div>
                   </div>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="additional-requests">
-            <h4>추가 요청사항</h4>
+          <div className="additional-context">
+            <h4>📚 Glossary/추가 맥락</h4>
             <textarea
-              className="additional-textarea"
-              value={additionalRequests}
-              onChange={(e) => setAdditionalRequests(e.target.value)}
-              placeholder="특별히 주의 깊게 보고 싶은 부분이나 추가 요청사항을 입력하세요."
-              rows={3}
+              className="context-textarea"
+              value={additionalContext}
+              onChange={(e) => setAdditionalContext(e.target.value)}
+              placeholder="용어 및 특별한 맥락 정보 등을 입력하세요."
+              rows={4}
             />
           </div>
         </div>
@@ -314,7 +291,7 @@ ${window.location.origin}
           </button>
         </div>
       </main>
-      
+
       <ConversionProgressDialog
         isOpen={showConversionDialog}
         progress={conversionProgress}
