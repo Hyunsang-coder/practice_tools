@@ -10,22 +10,37 @@ const useWhisper = () => {
     setTranscription(null);
     setError(null);
 
-    // Environment-aware API key handling
+    // Environment-aware API key handling with detailed debugging
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     const isDevelopment = import.meta.env.DEV;
     const isProduction = import.meta.env.PROD;
     
-    // API key validation
+    // Debug logging for troubleshooting
+    console.log('=== API Key Debug Info ===');
+    console.log('Environment:', { isDevelopment, isProduction });
+    console.log('API Key exists:', !!apiKey);
+    console.log('API Key length:', apiKey?.length || 0);
+    console.log('API Key starts with sk-:', apiKey?.startsWith('sk-'));
+    console.log('API Key first 10 chars:', apiKey?.substring(0, 10) || 'none');
+    console.log('All env vars:', Object.keys(import.meta.env));
+    
+    // More lenient API key validation
     const isValidApiKey = apiKey && 
                          apiKey !== 'YOUR_DUMMY_API_KEY_HERE' && 
                          apiKey.startsWith('sk-') && 
-                         apiKey.length > 20;
+                         apiKey.length > 10; // More lenient length check
     
     if (!isValidApiKey) {
-      console.warn('OpenAI API key not configured or invalid');
+      console.warn('OpenAI API key validation failed:', {
+        hasKey: !!apiKey,
+        keyStart: apiKey?.substring(0, 10),
+        keyLength: apiKey?.length,
+        isValidStart: apiKey?.startsWith('sk-'),
+        isDummy: apiKey === 'YOUR_DUMMY_API_KEY_HERE'
+      });
       
       const errorMessage = isDevelopment 
-        ? 'OpenAI API 키가 설정되지 않았습니다. (.env 파일 확인)'
+        ? `OpenAI API 키가 설정되지 않았습니다. (.env 파일 확인) - Key: ${apiKey?.substring(0, 10) || 'none'}`
         : 'OpenAI API 키가 설정되지 않았습니다. (관리자에게 문의)';
       
       setError(errorMessage);
@@ -43,7 +58,7 @@ const useWhisper = () => {
       return null;
     }
     
-    console.log(`Using OpenAI API in ${isProduction ? 'production' : 'development'} mode`);
+    console.log(`✅ Using OpenAI API in ${isProduction ? 'production' : 'development'} mode with key: ${apiKey.substring(0, 10)}...`);
 
     const formData = new FormData();
     formData.append('file', audioBlob, 'recording.mp3');
