@@ -15,27 +15,27 @@ const useRecorder = () => {
   const startRecording = useCallback(async () => {
     try {
       setError(null);
-      
+
       // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
           sampleRate: 16000 // Optimal for Whisper
-        } 
+        }
       });
-      
+
       streamRef.current = stream;
       audioChunksRef.current = [];
 
       // Create MediaRecorder
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      const mediaRecorder = new MediaRecorder(stream, { 
+      const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
         audioBitsPerSecond: 128000
       });
-      
+
       mediaRecorderRef.current = mediaRecorder;
 
       // Handle data available
@@ -49,7 +49,7 @@ const useRecorder = () => {
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         setAudioData(audioBlob);
-        
+
         // Cleanup
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
@@ -77,7 +77,7 @@ const useRecorder = () => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
-      
+
       // Pause timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -90,7 +90,7 @@ const useRecorder = () => {
     if (mediaRecorderRef.current && isRecording && isPaused) {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
-      
+
       // Resume timer
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -99,17 +99,36 @@ const useRecorder = () => {
   }, [isRecording, isPaused]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsPaused(false);
-      
-      // Clear timer
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+    return new Promise((resolve) => {
+      if (mediaRecorderRef.current && isRecording) {
+        // 기존 onstop 핸들러 저장
+        const originalOnStop = mediaRecorderRef.current.onstop;
+
+        // 새로운 onstop 핸들러로 Promise resolve 추가
+        mediaRecorderRef.current.onstop = () => {
+          // 원래 onstop 로직 실행
+          if (originalOnStop) {
+            originalOnStop();
+          }
+
+          setIsRecording(false);
+          setIsPaused(false);
+
+          // Clear timer
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+
+          // Promise resolve
+          resolve();
+        };
+
+        mediaRecorderRef.current.stop();
+      } else {
+        resolve();
       }
-    }
+    });
   }, [isRecording]);
 
   const resetRecording = useCallback(() => {

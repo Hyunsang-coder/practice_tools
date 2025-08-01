@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
 import useMp3Converter from '../hooks/useMp3Converter';
+import useWhisper from '../hooks/useWhisper';
 import ConversionProgressDialog from '../components/ConversionProgressDialog';
 import './ResultsPage.css';
 
@@ -22,9 +23,74 @@ function ResultsPage() {
     resetConverter
   } = useMp3Converter();
 
-  // 평가 커스터마이제이션 상태
-  const [evaluationDetail, setEvaluationDetail] = useState('detailed'); // brief, detailed, very-detailed
+  // Whisper AI 전사 훅
+  const {
+    transcribe,
+    isTranscribing,
+    transcription,
+    error: whisperError,
+  } = useWhisper();
+
   const [additionalContext, setAdditionalContext] = useState(''); // Glossary/맥락
+  const [evaluationDetail, setEvaluationDetail] = useState('brief'); // 평가 상세도
+  const [transcribedText, setTranscribedText] = useState(''); // 전사된 텍스트
+  const [transcriptionError, setTranscriptionError] = useState(null); // 전사 에러
+
+  // Whisper AI 전사 요청 핸들러
+  const handleTranscription = useCallback(async () => {
+    if (!resultsData?.audioData) {
+      // setTranscriptionError('전사할 오디오 파일이 없습니다.'); // useWhisper hook will handle this error
+      return;
+    }
+
+    try {
+      // MP3 변환이 필요하다면 변환부터 수행
+      let audioBlob = resultsData.audioData;
+      if (audioBlob.type !== 'audio/mp3') {
+        setShowConversionDialog(true);
+        const mp3Blob = await convertToMp3(audioBlob);
+        setShowConversionDialog(false);
+        if (mp3Blob) {
+          audioBlob = mp3Blob;
+        } else {
+          throw new Error('MP3 변환에 실패했습니다.');
+        }
+      }
+
+      const transcribedTextResult = await transcribe(audioBlob);
+      if (transcribedTextResult) {
+        setTranscribedText(transcribedTextResult);
+      }
+
+    } catch (error) {
+      console.error('Transcription process error:', error);
+      // Error will be set by useWhisper hook, or caught here if MP3 conversion fails
+    }
+  }, [resultsData, convertToMp3, transcribe]);
+
+  // useWhisper 훅의 transcription과 error를 ResultsPage의 상태와 동기화
+  useEffect(() => {
+    if (transcription) {
+      setTranscribedText(transcription);
+    }
+  }, [transcription]);
+
+  useEffect(() => {
+    if (whisperError) {
+      setTranscriptionError(whisperError);
+    } else {
+      setTranscriptionError(null);
+    }
+  }, [whisperError]);
+
+  // Clean up transcription error when audio data changes or component unmounts
+  useEffect(() => {
+    return () => {
+      setTranscriptionError(null);
+    };
+  }, [resultsData]);
+
+  // 평가 패키지 다운로드 기능
 
   // 평가 패키지 다운로드 기능
   const downloadEvaluationPackage = useCallback(async () => {
@@ -167,14 +233,37 @@ ${window.location.origin}
       </header>
 
       <main className="results-content">
-        {/* 원본 텍스트 섹션 */}
-        <div className="original-text-section">
-          <h3>📄 원본 텍스트</h3>
-          <div className="text-content original-text">
-            {resultsData.originalText || '원본 텍스트가 없습니다.'}
+        <div className="text-comparison-section">
+          {/* 원본 텍스트 섹션 */}
+          <div className="text-box original-text-section">
+            <h3>📄 원본 텍스트</h3>
+            <div className="text-content original-text">
+              {resultsData.originalText || '원본 텍스트가 없습니다.'}
+            </div>
+            <div className="text-info">
+              글자 수: {resultsData.originalText?.length || 0}
+            </div>
           </div>
-          <div className="text-info">
-            글자 수: {resultsData.originalText?.length || 0}
+
+          {/* 통역 텍스트 섹션 (Whisper 전사) */}
+          <div className="text-box transcribed-text-section">
+            <div className="transcribed-header">
+              <h3>🎙️ 통역 텍스트 (전사 내용)</h3>
+              <button
+                className="transcribe-button"
+                onClick={handleTranscription}
+                disabled={isTranscribing || !resultsData?.audioData}
+              >
+                {isTranscribing ? '전사 중...' : '✍️ 전사하기'}
+              </button>
+            </div>
+            <textarea
+              className="text-content transcribed-text"
+              value={transcribedText}
+              onChange={(e) => setTranscribedText(e.target.value)}
+              placeholder="'전사하기' 버튼을 클릭하여 녹음 내용을 텍스트로 변환하세요. 변환된 내용은 여기서 직접 수정할 수 있습니다."
+            />
+            {transcriptionError && <div className="error-message">{transcriptionError}</div>}
           </div>
         </div>
 
@@ -279,7 +368,15 @@ ${window.location.origin}
         <div className="action-section">
           <button
             className="retry-button"
-            onClick={() => navigate(resultsData.mode === 'sight-translation' ? '/sight-translation' : '/simultaneous')}
+            onClick={() => {
+              // 원본 연습 데이터로 다시 연습하기
+              if (resultsData.originalPracticeData) {
+                navigate('/practice', { state: resultsData.originalPracticeData });
+              } else {
+                // fallback: 기본 설정으로 해당 모드 페이지로 이동
+                navigate(resultsData.mode === 'sight-translation' ? '/sight-translation' : '/simultaneous');
+              }
+            }}
           >
             🔄 다시 연습하기
           </button>
