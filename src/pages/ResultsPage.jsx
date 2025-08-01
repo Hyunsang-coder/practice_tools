@@ -415,7 +415,7 @@ ${window.location.origin}
           {/* 통역 텍스트 섹션 (Whisper 전사) */}
           <div className="text-box transcribed-text-section">
             <div className="transcribed-header">
-              <h3>🎙️ 통역 텍스트 (전사 내용)</h3>
+              <h3>🎙️ 통역 텍스트</h3>
               <button
                 className="transcribe-button"
                 onClick={handleTranscription}

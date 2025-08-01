@@ -1,70 +1,7 @@
-:root {
-  /* Colors */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-darker: #1e40af;
-
-  --color-accent-green: #4ade80;
-  --color-accent-green-dark: #059669;
-  --color-accent-green-darker: #047857;
-
-  --color-text-dark: #1e293b;
-  --color-text-medium: #475569;
-  --color-text-light: #64748b;
-  --color-text-placeholder: #9ca3af;
-
-  --color-background-light: #f8fafc;
-  --color-background-input: #f9fafb;
-  --color-background-main-start: #f0fdf4;
-  --color-background-main-end: #dcfce7;
-  --color-background-tabs: #f1f5f9;
-  --color-background-preview: #f0fdf4;
-  --color-background-white: #ffffff;
-
-  --color-border-light: #e2e8f0;
-  --color-border-medium: #d1d5db;
-
-  /* Shadows */
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-sm: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.2);
-  --shadow-focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  --shadow-thumb: 0 2px 8px rgba(0, 0, 0, 0.3);
-
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 50%;
-  --radius-slider-track: 4px;
-
-  /* Font Sizes */
-  --font-size-xs: 0.8rem;
-  --font-size-sm: 0.9rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.1rem;
-  --font-size-xl: 1.2rem;
-  --font-size-2xl: 1.3rem;
-  --font-size-3xl: 1.8rem;
-  --font-size-4xl: 2.5rem;
-
-  /* Spacing */
-  --spacing-1: 0.3rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 0.8rem;
-  --spacing-4: 1rem;
-  --spacing-5: 1.2rem;
-  --spacing-6: 1.5rem;
-  --spacing-8: 2rem;
-  --spacing-12: 3rem;
-}
-
 .practice-page {
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, var(--color-background-medium) 0%, var(--color-background-dark) 100%);
   color: var(--color-text-dark);
   display: flex;
   flex-direction: column;
@@ -119,7 +56,7 @@
 
 .recording-indicator {
   background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  color: var(--color-accent-red);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: var(--font-size-sm);
@@ -171,8 +108,7 @@
 }
 
 .text-content {
-  font-size: 2.5rem;
-  /* Increased font size */
+  font-size: var(--font-size-4xl);
   background: var(--color-background-white);
   border-radius: var(--radius-xl);
   padding: 5rem;
@@ -196,7 +132,7 @@
   text-overflow: ellipsis;
   width: 100%;
   display: block;
-  color: #b0b5bd;
+  color: var(--color-text-placeholder);
 }
 
 .progress-indicator {
@@ -204,9 +140,9 @@
   bottom: 1rem;
   right: 1rem;
   background: rgba(59, 130, 246, 0.9);
-  color: white;
+  color: var(--color-text-white);
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   font-weight: 600;
   backdrop-filter: blur(10px);
@@ -256,7 +192,7 @@
 
 .word.passed {
   opacity: 0.3;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
     color 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: opacity, color;
@@ -489,35 +425,35 @@
 }
 
 .play-pause-button {
-  background: linear-gradient(135deg, var(--color-accent-green), #22c55e);
-  color: white;
+  background: linear-gradient(135deg, var(--color-accent-green), var(--color-accent-green-dark));
+  color: var(--color-text-white);
 }
 
 .play-pause-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, var(--color-accent-green-dark), var(--color-accent-green-darker));
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
 }
 
 .record-button {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+  background: linear-gradient(135deg, var(--color-accent-red), var(--color-accent-red-dark));
+  color: var(--color-text-white);
 }
 
 .record-button.recording {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  background: linear-gradient(135deg, var(--color-accent-red-dark), var(--color-accent-red-darker));
   animation: pulse 2s infinite;
 }
 
 .record-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  background: linear-gradient(135deg, var(--color-accent-red-dark), var(--color-accent-red-darker));
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
 }
 
 .finish-button {
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-  color: white;
+  color: var(--color-text-white);
 }
 
 .finish-button:hover:not(:disabled) {
@@ -534,17 +470,17 @@
 
 .error-message {
   background: rgba(239, 68, 68, 0.2);
-  border: 1px solid #ef4444;
+  border: 1px solid var(--color-accent-red);
   border-radius: var(--radius-md);
   padding: 1rem;
-  color: #f87171;
+  color: var(--color-accent-red-dark);
   text-align: center;
   margin-bottom: 1rem;
 }
 
 .recording-info {
   background: rgba(34, 197, 94, 0.2);
-  border: 1px solid #22c55e;
+  border: 1px solid var(--color-accent-green-dark);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   text-align: center;
@@ -571,7 +507,7 @@
 .practice-page.error h1 {
   font-size: var(--font-size-4xl);
   margin-bottom: 1rem;
-  color: #f87171;
+  color: var(--color-accent-red);
 }
 
 .practice-page.error p {
@@ -582,7 +518,7 @@
 
 .practice-page.error button {
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-  color: white;
+  color: var(--color-text-white);
   border: none;
   padding: 1rem 2rem;
   border-radius: var(--radius-lg);
@@ -623,10 +559,8 @@
 
   .text-content {
     font-size: 1.6rem;
-    /* 영역 전체를 좌우로 넓게 확보 */
     width: 100%;
     min-width: 0;
-    /* 아래는 기존대로 */
     padding: 5rem 8rem;
     display: flex;
     align-items: center;
@@ -642,7 +576,7 @@
     text-overflow: ellipsis;
     width: 100%;
     display: block;
-    color: #b0b5bd;
+    color: var(--color-text-placeholder);
   }
 
   .control-buttons button {
