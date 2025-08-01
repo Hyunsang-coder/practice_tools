@@ -17,9 +17,28 @@ const useMp3Converter = () => {
       // Convert blob to ArrayBuffer
       const arrayBuffer = await audioBlob.arrayBuffer();
       
-      // Decode audio data using Web Audio API
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      // Check Web Audio API support
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        throw new Error('Web Audio API not supported in this browser');
+      }
+      
+      // Decode audio data using Web Audio API with error handling
+      const audioContext = new AudioContextClass();
+      let audioBuffer;
+      try {
+        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      } catch (decodeError) {
+        // Try alternative decoding method for older browsers
+        console.warn('Primary decode method failed, trying fallback:', decodeError);
+        audioBuffer = await new Promise((resolve, reject) => {
+          audioContext.decodeAudioData(
+            arrayBuffer,
+            resolve,
+            reject
+          );
+        });
+      }
       
       // Create MP3 encoder
       const encoder = await createMp3Encoder();

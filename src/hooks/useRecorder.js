@@ -1,4 +1,39 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+
+// Browser compatibility check utility
+const checkBrowserSupport = () => {
+  const issues = [];
+  
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    issues.push('Microphone access not supported');
+  }
+  
+  if (!window.MediaRecorder) {
+    issues.push('Audio recording not supported');
+  }
+  
+  // Check for specific MIME type support
+  const supportedTypes = [];
+  const typesToTest = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
+  
+  if (window.MediaRecorder) {
+    typesToTest.forEach(type => {
+      if (MediaRecorder.isTypeSupported(type)) {
+        supportedTypes.push(type);
+      }
+    });
+  }
+  
+  if (supportedTypes.length === 0 && window.MediaRecorder) {
+    issues.push('No supported audio formats found');
+  }
+  
+  return {
+    isSupported: issues.length === 0,
+    issues,
+    supportedTypes
+  };
+};
 
 const useRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -6,6 +41,7 @@ const useRecorder = () => {
   const [audioData, setAudioData] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState(null);
+  const [browserSupport] = useState(() => checkBrowserSupport());
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -15,26 +51,57 @@ const useRecorder = () => {
   const startRecording = useCallback(async () => {
     try {
       setError(null);
+      
+      // Check browser support before attempting to record
+      if (!browserSupport.isSupported) {
+        const errorMessage = `Recording not supported: ${browserSupport.issues.join(', ')}`;
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
 
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Request microphone access with fallback constraints
+      const constraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
           sampleRate: 16000 // Optimal for Whisper
         }
-      });
+      };
+      
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        // Fallback to basic audio constraints if advanced features fail
+        console.warn('Advanced audio constraints failed, trying basic:', err);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
 
       streamRef.current = stream;
       audioChunksRef.current = [];
 
-      // Create MediaRecorder
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType,
-        audioBitsPerSecond: 128000
-      });
+      // Select best supported MIME type
+      let mimeType = 'audio/webm'; // Default
+      if (browserSupport.supportedTypes.length > 0) {
+        // Prefer webm, then mp4, then others
+        const preferredOrder = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
+        mimeType = preferredOrder.find(type => browserSupport.supportedTypes.includes(type)) 
+                  || browserSupport.supportedTypes[0];
+      }
+      
+      // Create MediaRecorder with error handling
+      let mediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType,
+          audioBitsPerSecond: 128000
+        });
+      } catch (err) {
+        // Fallback without bitrate specification
+        console.warn('MediaRecorder with bitrate failed, trying without:', err);
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+      }
 
       mediaRecorderRef.current = mediaRecorder;
 
@@ -69,9 +136,23 @@ const useRecorder = () => {
 
     } catch (err) {
       console.error('Error starting recording:', err);
-      setError('마이크 접근 권한이 필요합니다. 브라우저 설정을 확인해주세요.');
+      
+      // Provide specific error messages based on error type
+      let errorMessage = '마이크 접근 권한이 필요합니다.';
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage = '마이크 접근이 차단되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = '마이크를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요.';
+      } else if (err.name === 'NotSupportedError') {
+        errorMessage = '현재 브라우저는 오디오 녹음을 지원하지 않습니다.';
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = '마이크를 사용할 수 없습니다. 다른 앱에서 사용 중일 수 있습니다.';
+      }
+      
+      setError(errorMessage);
     }
-  }, []);
+  }, [browserSupport]);
 
   const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
@@ -101,32 +182,45 @@ const useRecorder = () => {
   const stopRecording = useCallback(() => {
     return new Promise((resolve) => {
       if (mediaRecorderRef.current && isRecording) {
-        // 기존 onstop 핸들러 저장
-        const originalOnStop = mediaRecorderRef.current.onstop;
+        // Create audio blob immediately to avoid race conditions
+        const audioBlob = new Blob(audioChunksRef.current, { 
+          type: mediaRecorderRef.current.mimeType || 'audio/webm' 
+        });
 
-        // 새로운 onstop 핸들러로 Promise resolve 추가
+        // Set up onstop handler to ensure proper cleanup sequence
         mediaRecorderRef.current.onstop = () => {
-          // 원래 onstop 로직 실행 (audioData 생성)
-          const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType });
-          setAudioData(audioBlob);
+          // Use requestAnimationFrame to ensure DOM updates complete
+          requestAnimationFrame(() => {
+            // Clean up media stream
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop());
+              streamRef.current = null;
+            }
 
-          // Cleanup
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-          }
+            // Update states
+            setIsRecording(false);
+            setIsPaused(false);
 
-          setIsRecording(false);
-          setIsPaused(false);
+            // Clear timer
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
 
-          // Clear timer
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
+            // Set audio data and resolve with same blob to ensure consistency
+            setAudioData(audioBlob);
+            
+            // Use setTimeout to ensure React state updates complete before resolving
+            setTimeout(() => {
+              resolve(audioBlob);
+            }, 0);
+          });
+        };
 
-          // Promise resolve with the created audioBlob
-          resolve(audioBlob);
+        // Handle error case
+        mediaRecorderRef.current.onerror = (error) => {
+          console.error('MediaRecorder error during stop:', error);
+          resolve(audioBlob); // Still resolve with the blob we have
         };
 
         mediaRecorderRef.current.stop();
@@ -137,6 +231,12 @@ const useRecorder = () => {
   }, [isRecording]);
 
   const resetRecording = useCallback(() => {
+    // Clean up URL object before resetting
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    
     setAudioData(null);
     setRecordingTime(0);
     setError(null);
@@ -144,12 +244,58 @@ const useRecorder = () => {
     audioChunksRef.current = [];
   }, []);
 
+  const audioUrlRef = useRef(null);
+
   const getAudioUrl = useCallback(() => {
     if (audioData) {
-      return URL.createObjectURL(audioData);
+      // Clean up previous URL object to prevent memory leaks
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+      }
+      
+      audioUrlRef.current = URL.createObjectURL(audioData);
+      return audioUrlRef.current;
     }
     return null;
   }, [audioData]);
+
+  // Cleanup URL object when component unmounts or audioData changes
+  useEffect(() => {
+    return () => {
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
+  }, [audioData]);
+
+  // Cleanup media resources on component unmount
+  useEffect(() => {
+    return () => {
+      // Stop recording if still active
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      
+      // Clean up media stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      
+      // Clear timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // Clean up URL object
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
+  }, []);
 
   // Convert blob to ArrayBuffer for Whisper processing
   const getAudioBuffer = useCallback(async () => {
@@ -179,7 +325,9 @@ const useRecorder = () => {
     resetRecording,
     getAudioUrl,
     getAudioBuffer,
-    isSupported: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    isSupported: browserSupport.isSupported,
+    browserSupport,
+    supportedMimeTypes: browserSupport.supportedTypes
   };
 };
 

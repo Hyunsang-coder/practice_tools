@@ -7,21 +7,44 @@ import SightTranslationPage from './pages/SightTranslationPage';
 import SimultaneousPage from './pages/SimultaneousPage';
 import PracticePage from './pages/PracticePage';
 import ResultsPage from './pages/ResultsPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css'
 
 function App() {
   return (
-    <Router>
-      <div className="app">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/sight-translation" element={<SightTranslationPage />} />
-          <Route path="/simultaneous" element={<SimultaneousPage />} />
-          <Route path="/practice" element={<PracticePage />} />
-          <Route path="/results" element={<ResultsPage />} />
-        </Routes>
-      </div>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <div className="app">
+          <Routes>
+            <Route path="/" element={
+              <ErrorBoundary>
+                <HomePage />
+              </ErrorBoundary>
+            } />
+            <Route path="/sight-translation" element={
+              <ErrorBoundary>
+                <SightTranslationPage />
+              </ErrorBoundary>
+            } />
+            <Route path="/simultaneous" element={
+              <ErrorBoundary>
+                <SimultaneousPage />
+              </ErrorBoundary>
+            } />
+            <Route path="/practice" element={
+              <ErrorBoundary>
+                <PracticePage />
+              </ErrorBoundary>
+            } />
+            <Route path="/results" element={
+              <ErrorBoundary>
+                <ResultsPage />
+              </ErrorBoundary>
+            } />
+          </Routes>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

@@ -38,6 +38,15 @@ function ResultsPage() {
   const [transcribedText, setTranscribedText] = useState(''); // 전사된 텍스트
   const [transcriptionError, setTranscriptionError] = useState(null); // 전사 에러
 
+  // Cleanup audioUrl from navigation state to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (resultsData?.audioUrl) {
+        URL.revokeObjectURL(resultsData.audioUrl);
+      }
+    };
+  }, [resultsData?.audioUrl]);
+
   // Whisper AI 전사 요청 핸들러
   const handleTranscription = useCallback(async () => {
     if (!resultsData?.audioData) {
@@ -111,7 +120,8 @@ function ResultsPage() {
 
   // 평가 패키지 다운로드 기능
 
-  // 평가 패키지 다운로드 기능
+  // 평가 패키지 다운로드 기능 (for future use)
+  // eslint-disable-next-line no-unused-vars
   const downloadEvaluationPackage = useCallback(async () => {
     if (!resultsData || !resultsData.audioData) return;
 

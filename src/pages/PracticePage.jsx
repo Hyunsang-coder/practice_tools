@@ -156,9 +156,8 @@ function PracticePage() {
     startRecording,
     pauseRecording,
     resumeRecording,
-    stopRecording,
-    // resetRecording, // 사용하지 않음
-    getAudioUrl
+    stopRecording
+    // resetRecording, getAudioUrl // 사용하지 않음
   } = useRecorder();
 
   // useWhisper 훅은 ResultsPage에서만 사용
@@ -245,7 +244,8 @@ function PracticePage() {
     }
   }, [practiceData?.mode, isRecording, isPaused, resumeRecording]);
 
-  // 연습 완전 중지 함수
+  // 연습 완전 중지 함수 (for future use)
+  // eslint-disable-next-line no-unused-vars
   const handleStopPractice = useCallback(async () => {
     // 자동 중지 타이머가 있다면 취소
     if (autoStopTimeout) {
@@ -345,7 +345,7 @@ function PracticePage() {
     };
 
     navigate('/results', { state: resultsData });
-  }, [audioData, practiceData, getAudioUrl, recordingTime, navigate, isRecording, stopRecording, autoStopTimeout]);
+  }, [audioData, practiceData, recordingTime, navigate, isRecording, stopRecording, autoStopTimeout]);
 
   const handleFinishPractice = useCallback(async () => {
     // 진행률이 100%가 아닐 때만 확인 팝업 표시
