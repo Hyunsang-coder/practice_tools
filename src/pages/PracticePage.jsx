@@ -345,52 +345,109 @@ function PracticePage() {
 
   // finishPractice를 먼저 정의 (호이스팅 문제 해결)
   const finishPractice = useCallback(async () => {
-    let currentAudioData = audioData;
+    try {
+      let currentAudioData = audioData;
 
-    // 녹음 중이면 중지하고 완료될 때까지 대기
-    if (isRecording) {
-      const stoppedAudioData = await stopRecording();
-      currentAudioData = stoppedAudioData || audioData;
+      // 녹음 중이면 중지하고 완료될 때까지 대기
+      if (isRecording) {
+        try {
+          const stoppedAudioData = await stopRecording();
+          currentAudioData = stoppedAudioData || audioData;
+        } catch (recordingError) {
+          console.error('Recording stop failed:', recordingError);
+          // 녹음 중지에 실패해도 계속 진행
+          currentAudioData = audioData;
+        }
+      }
+
+      // 자동 중지 타이머가 있다면 취소
+      if (autoStopTimeout) {
+        clearTimeout(autoStopTimeout);
+        setAutoStopTimeout(null);
+      }
+
+      setIsPlaying(false);
+
+      // 결과 데이터 생성 시 안전한 처리
+      let audioUrl = null;
+      if (currentAudioData) {
+        try {
+          audioUrl = URL.createObjectURL(currentAudioData);
+        } catch (urlError) {
+          console.error('Failed to create audio URL:', urlError);
+          // URL 생성에 실패해도 오디오 데이터는 전달
+        }
+      }
+
+      const resultsData = {
+        mode: practiceData?.mode || 'unknown',
+        originalText: practiceData?.text || practiceData?.originalScript || '',
+        userTranscript: '', // 빈 문자열로 시작, ResultsPage에서 transcribe
+        audioUrl,
+        audioData: currentAudioData, // 원본 audioData 전달
+        practiceSettings: {
+          speed: practiceData?.speed || practiceData?.playbackSpeed || 1.0,
+          duration: recordingTime || '00:00'
+        },
+        // 다시 연습하기를 위한 원본 practiceData 보존
+        originalPracticeData: practiceData
+      };
+
+      navigate('/results', { state: resultsData });
+    } catch (error) {
+      console.error('Critical error in finishPractice:', error);
+      
+      // 사용자에게 에러 알림
+      alert('연습 완료 중 오류가 발생했습니다. 다시 시도해주세요.');
+      
+      // 에러가 발생해도 최소한의 데이터로 결과 페이지로 이동
+      try {
+        const fallbackData = {
+          mode: practiceData?.mode || 'unknown',
+          originalText: practiceData?.text || practiceData?.originalScript || '',
+          userTranscript: '',
+          audioUrl: null,
+          audioData: null,
+          practiceSettings: {
+            speed: 1.0,
+            duration: '00:00'
+          },
+          originalPracticeData: practiceData,
+          hasError: true
+        };
+        
+        navigate('/results', { state: fallbackData });
+      } catch (fallbackError) {
+        console.error('Fallback navigation failed:', fallbackError);
+        // 최후의 수단으로 홈으로 리다이렉트
+        navigate('/');
+      }
     }
-
-    // 자동 중지 타이머가 있다면 취소
-    if (autoStopTimeout) {
-      clearTimeout(autoStopTimeout);
-      setAutoStopTimeout(null);
-    }
-
-    setIsPlaying(false);
-
-    const resultsData = {
-      mode: practiceData?.mode,
-      originalText: practiceData?.text || practiceData?.originalScript || '',
-      userTranscript: '', // 빈 문자열로 시작, ResultsPage에서 transcribe
-      audioUrl: currentAudioData ? URL.createObjectURL(currentAudioData) : null,
-      audioData: currentAudioData, // 원본 audioData 전달
-      practiceSettings: {
-        speed: practiceData?.speed || practiceData?.playbackSpeed,
-        duration: recordingTime
-      },
-      // 다시 연습하기를 위한 원본 practiceData 보존
-      originalPracticeData: practiceData
-    };
-
-    navigate('/results', { state: resultsData });
   }, [audioData, practiceData, recordingTime, navigate, isRecording, stopRecording, autoStopTimeout]);
 
   const handleFinishPractice = useCallback(async () => {
-    // 진행률이 100%가 아닐 때만 확인 팝업 표시
-    if (progress < 100) {
-      setShowConfirmDialog(true);
-      return;
-    }
+    try {
+      // 진행률이 100%가 아닐 때만 확인 팝업 표시
+      if (progress < 100) {
+        setShowConfirmDialog(true);
+        return;
+      }
 
-    await finishPractice();
+      await finishPractice();
+    } catch (error) {
+      console.error('Error in handleFinishPractice:', error);
+      alert('연습 완료 처리 중 오류가 발생했습니다.');
+    }
   }, [progress, finishPractice]);
 
-  const handleConfirmFinish = useCallback(() => {
-    setShowConfirmDialog(false);
-    finishPractice();
+  const handleConfirmFinish = useCallback(async () => {
+    try {
+      setShowConfirmDialog(false);
+      await finishPractice();
+    } catch (error) {
+      console.error('Error in handleConfirmFinish:', error);
+      alert('연습 완료 처리 중 오류가 발생했습니다.');
+    }
   }, [finishPractice]);
 
   if (!practiceData) {

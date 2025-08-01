@@ -15,11 +15,16 @@ const useWhisper = () => {
     const isDevelopment = import.meta.env.DEV;
     const isProduction = import.meta.env.PROD;
     
-    // API key validation
+    // Enhanced API key validation with security checks
     const isValidApiKey = apiKey && 
                          apiKey !== 'YOUR_DUMMY_API_KEY_HERE' && 
                          apiKey.startsWith('sk-') && 
                          apiKey.length > 20;
+    
+    // Security warning for production
+    if (isProduction && isValidApiKey) {
+      console.warn('⚠️ SECURITY WARNING: API key is exposed in client-side code. Consider using a backend proxy for production.');
+    }
     
     if (!isValidApiKey) {
       console.warn('OpenAI API key not configured or invalid');
@@ -43,7 +48,10 @@ const useWhisper = () => {
       return null;
     }
     
-    console.log(`✅ Using OpenAI API in ${isProduction ? 'production' : 'development'} mode`);
+    // Don't log API usage in production for security
+    if (isDevelopment) {
+      console.log(`✅ Using OpenAI API in development mode`);
+    }
 
     const formData = new FormData();
     formData.append('file', audioBlob, 'recording.mp3');
@@ -63,15 +71,30 @@ const useWhisper = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || 'Unknown error from Whisper API');
+        // Don't expose detailed API errors in production
+        const errorMessage = isDevelopment 
+          ? (data.error?.message || 'Unknown error from Whisper API')
+          : 'API 요청 중 오류가 발생했습니다.';
+        throw new Error(errorMessage);
       }
 
       setTranscription(data.text);
       setIsTranscribing(false);
       return data.text;
     } catch (err) {
-      console.error('Whisper API error:', err);
-      setError(`Whisper API 요청 중 오류가 발생했습니다: ${err.message}`);
+      // Log detailed errors only in development
+      if (isDevelopment) {
+        console.error('Whisper API error:', err);
+      } else {
+        console.error('API request failed');
+      }
+      
+      // Provide user-friendly error messages
+      const userMessage = isDevelopment 
+        ? `Whisper API 요청 중 오류가 발생했습니다: ${err.message}`
+        : 'AI 전사 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+      
+      setError(userMessage);
       setIsTranscribing(false);
       return null;
     }

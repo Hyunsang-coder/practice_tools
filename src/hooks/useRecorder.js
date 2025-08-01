@@ -235,10 +235,16 @@ const useRecorder = () => {
     });
   }, [isRecording]);
 
+  const audioUrlRef = useRef(null);
+
   const resetRecording = useCallback(() => {
     // Clean up URL object before resetting
     if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
+      try {
+        URL.revokeObjectURL(audioUrlRef.current);
+      } catch (error) {
+        console.warn('URL revocation failed:', error);
+      }
       audioUrlRef.current = null;
     }
     
@@ -249,14 +255,17 @@ const useRecorder = () => {
     audioChunksRef.current = [];
   }, []);
 
-  const audioUrlRef = useRef(null);
-
   const getAudioUrl = useCallback(() => {
     if (audioData) {
       try {
         // Clean up previous URL object to prevent memory leaks
         if (audioUrlRef.current) {
-          URL.revokeObjectURL(audioUrlRef.current);
+          try {
+            URL.revokeObjectURL(audioUrlRef.current);
+          } catch (revokeError) {
+            console.warn('URL revocation failed:', revokeError);
+          }
+          audioUrlRef.current = null;
         }
         
         // Validate blob before creating URL
@@ -279,7 +288,11 @@ const useRecorder = () => {
   useEffect(() => {
     return () => {
       if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
+        try {
+          URL.revokeObjectURL(audioUrlRef.current);
+        } catch (error) {
+          console.warn('URL revocation failed in cleanup:', error);
+        }
         audioUrlRef.current = null;
       }
     };
@@ -290,12 +303,20 @@ const useRecorder = () => {
     return () => {
       // Stop recording if still active
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (error) {
+          console.warn('Failed to stop MediaRecorder during cleanup:', error);
+        }
       }
       
       // Clean up media stream
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        try {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        } catch (error) {
+          console.warn('Failed to stop media tracks during cleanup:', error);
+        }
         streamRef.current = null;
       }
       
@@ -307,7 +328,11 @@ const useRecorder = () => {
       
       // Clean up URL object
       if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
+        try {
+          URL.revokeObjectURL(audioUrlRef.current);
+        } catch (error) {
+          console.warn('URL revocation failed in final cleanup:', error);
+        }
         audioUrlRef.current = null;
       }
     };
