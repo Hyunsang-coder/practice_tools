@@ -80,10 +80,18 @@ const RollingText = ({ text, speed, isPlaying, onComplete, onProgress }) => {
   }, [currentIndex, words.length, onComplete, onProgress]);
 
   const getHighlightedText = () => {
-    // 현재 단어 주변의 일정 범위만 표시 (윈도우 방식)
+    // 현재 단어를 중앙에 배치하는 윈도우 방식
     const windowSize = 12; // 한 번에 보여줄 단어 수
-    const startIndex = Math.max(0, currentIndex - Math.floor(windowSize / 3));
-    const endIndex = Math.min(words.length, startIndex + windowSize);
+    const halfWindow = Math.floor(windowSize / 2);
+    
+    // 현재 단어를 중앙에 배치
+    let startIndex = Math.max(0, currentIndex - halfWindow);
+    let endIndex = Math.min(words.length, startIndex + windowSize);
+    
+    // 끝부분에서 윈도우 조정 (전방으로 밀기)
+    if (endIndex === words.length && words.length > windowSize) {
+      startIndex = Math.max(0, words.length - windowSize);
+    }
 
     const visibleWords = words.slice(startIndex, endIndex);
 
