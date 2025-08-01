@@ -114,13 +114,18 @@ const useRecorder = () => {
 
       // Handle recording stop
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        setAudioData(audioBlob);
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          setAudioData(audioBlob);
 
-        // Cleanup
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
+          // Cleanup
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+          }
+        } catch (error) {
+          console.error('Error in mediaRecorder.onstop:', error);
+          setError('녹음 완료 중 오류가 발생했습니다.');
         }
       };
 
@@ -248,13 +253,24 @@ const useRecorder = () => {
 
   const getAudioUrl = useCallback(() => {
     if (audioData) {
-      // Clean up previous URL object to prevent memory leaks
-      if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
+      try {
+        // Clean up previous URL object to prevent memory leaks
+        if (audioUrlRef.current) {
+          URL.revokeObjectURL(audioUrlRef.current);
+        }
+        
+        // Validate blob before creating URL
+        if (audioData instanceof Blob && audioData.size > 0) {
+          audioUrlRef.current = URL.createObjectURL(audioData);
+          return audioUrlRef.current;
+        } else {
+          console.warn('Invalid audio blob:', { audioData, size: audioData?.size });
+          return null;
+        }
+      } catch (error) {
+        console.error('Error creating audio URL:', error);
+        return null;
       }
-      
-      audioUrlRef.current = URL.createObjectURL(audioData);
-      return audioUrlRef.current;
     }
     return null;
   }, [audioData]);
