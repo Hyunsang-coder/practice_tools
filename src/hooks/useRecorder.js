@@ -106,9 +106,14 @@ const useRecorder = () => {
 
         // 새로운 onstop 핸들러로 Promise resolve 추가
         mediaRecorderRef.current.onstop = () => {
-          // 원래 onstop 로직 실행
-          if (originalOnStop) {
-            originalOnStop();
+          // 원래 onstop 로직 실행 (audioData 생성)
+          const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType });
+          setAudioData(audioBlob);
+
+          // Cleanup
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
           }
 
           setIsRecording(false);
@@ -120,13 +125,13 @@ const useRecorder = () => {
             timerRef.current = null;
           }
 
-          // Promise resolve
-          resolve();
+          // Promise resolve with the created audioBlob
+          resolve(audioBlob);
         };
 
         mediaRecorderRef.current.stop();
       } else {
-        resolve();
+        resolve(null);
       }
     });
   }, [isRecording]);

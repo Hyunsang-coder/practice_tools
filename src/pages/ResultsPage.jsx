@@ -265,7 +265,6 @@ ${window.location.origin}
 
       // 고정된 평가 기준
       const criteriaText = `- Accuracy & Coverage: 내용 전달의 정확성과 완성도
-- Delivery & Performance: 발표 속도, 유창함, 전달력  
 - Natural Language: 언어의 자연스러움과 적절성`;
 
       const detailText = {
@@ -468,13 +467,6 @@ ${window.location.origin}
                 </div>
               </div>
               <div className="criterion-item">
-                <span className="criterion-icon">🎤</span>
-                <div className="criterion-content">
-                  <div className="criterion-title">Delivery & Performance</div>
-                  <div className="criterion-desc">발표 속도, 유창함, 전달력</div>
-                </div>
-              </div>
-              <div className="criterion-item">
                 <span className="criterion-icon">💬</span>
                 <div className="criterion-content">
                   <div className="criterion-title">Natural Language</div>
@@ -540,9 +532,9 @@ ${window.location.origin}
           </button>
           <button
             className="different-mode-button"
-            onClick={() => navigate(resultsData.mode === 'sight-translation' ? '/simultaneous' : '/sight-translation')}
+            onClick={() => navigate('/sight-translation')}
           >
-            {resultsData.mode === 'sight-translation' ? '🎥 동시통역 연습' : '📖 시역 연습'}
+            다른 연습으로
           </button>
         </div>
       </main>

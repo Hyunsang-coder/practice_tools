@@ -314,9 +314,12 @@ function PracticePage() {
 
   // finishPractice를 먼저 정의 (호이스팅 문제 해결)
   const finishPractice = useCallback(async () => {
+    let currentAudioData = audioData;
+
     // 녹음 중이면 중지하고 완료될 때까지 대기
     if (isRecording) {
-      await stopRecording();
+      const stoppedAudioData = await stopRecording();
+      currentAudioData = stoppedAudioData || audioData;
     }
 
     // 자동 중지 타이머가 있다면 취소
@@ -331,8 +334,8 @@ function PracticePage() {
       mode: practiceData?.mode,
       originalText: practiceData?.text || practiceData?.originalScript || '',
       userTranscript: '', // 빈 문자열로 시작, ResultsPage에서 transcribe
-      audioUrl: audioData ? getAudioUrl() : null,
-      audioData: audioData, // 원본 audioData 전달
+      audioUrl: currentAudioData ? URL.createObjectURL(currentAudioData) : null,
+      audioData: currentAudioData, // 원본 audioData 전달
       practiceSettings: {
         speed: practiceData?.speed || practiceData?.playbackSpeed,
         duration: recordingTime
