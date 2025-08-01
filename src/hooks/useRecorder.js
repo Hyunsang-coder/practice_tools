@@ -160,27 +160,41 @@ const useRecorder = () => {
   }, [browserSupport]);
 
   const pauseRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording && !isPaused) {
-      mediaRecorderRef.current.pause();
-      setIsPaused(true);
+    if (mediaRecorderRef.current && 
+        mediaRecorderRef.current.state === 'recording' && 
+        isRecording && !isPaused) {
+      try {
+        mediaRecorderRef.current.pause();
+        setIsPaused(true);
 
-      // Pause timer
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+        // Pause timer
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      } catch (error) {
+        console.error('Failed to pause recording:', error);
+        setError('녹음 일시정지 중 오류가 발생했습니다.');
       }
     }
   }, [isRecording, isPaused]);
 
   const resumeRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording && isPaused) {
-      mediaRecorderRef.current.resume();
-      setIsPaused(false);
+    if (mediaRecorderRef.current && 
+        mediaRecorderRef.current.state === 'paused' && 
+        isRecording && isPaused) {
+      try {
+        mediaRecorderRef.current.resume();
+        setIsPaused(false);
 
-      // Resume timer
-      timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
+        // Resume timer
+        timerRef.current = setInterval(() => {
+          setRecordingTime(prev => prev + 1);
+        }, 1000);
+      } catch (error) {
+        console.error('Failed to resume recording:', error);
+        setError('녹음 재개 중 오류가 발생했습니다.');
+      }
     }
   }, [isRecording, isPaused]);
 

@@ -190,13 +190,26 @@ function PracticePage() {
     showDisplaySettings: true
   });
 
-  // 텍스트 표시 설정
-  const [displaySettings, setDisplaySettings] = useState({
+  // 텍스트 표시 설정 - raw state
+  const [displaySettingsState, setDisplaySettingsState] = useState({
     windowSize: 12,        // 한 번에 보여줄 단어 수
     fontSize: 2.0,         // 폰트 크기 (rem)
     textColor: '#000000',  // 텍스트 색상
     highlightRange: 2      // 강조 범위 (0=현재만, 1=현재±1, 2=현재±2)
   });
+
+  // Memoize displaySettings to prevent unnecessary RollingText re-renders
+  const displaySettings = useMemo(() => displaySettingsState, [
+    displaySettingsState.windowSize, 
+    displaySettingsState.fontSize, 
+    displaySettingsState.textColor, 
+    displaySettingsState.highlightRange
+  ]);
+
+  // Update setDisplaySettings to use the new state
+  const setDisplaySettings = useCallback((newSettings) => {
+    setDisplaySettingsState(newSettings);
+  }, []);
 
   // Convenience getters for backward compatibility
   const isPlaying = playbackState.isPlaying;
@@ -361,7 +374,11 @@ function PracticePage() {
     }
 
     if (isRecording) {
-      await stopRecording();
+      try {
+        await stopRecording();
+      } catch (error) {
+        console.error('Stop recording failed:', error);
+      }
     }
     setIsPlaying(false);
   }, [isRecording, stopRecording, autoStopTimeout]);
@@ -409,15 +426,25 @@ function PracticePage() {
     setIsPlaying(false);
     setIsCompleted(true);
 
+    // Clear any existing timeout before setting new one - Fix memory leak
+    if (autoStopTimeout) {
+      clearTimeout(autoStopTimeout);
+      setAutoStopTimeout(null);
+    }
+
     // 진행률 100% 달성 시 4초 후 자동으로 녹음 중지
     if (isRecording && !isPaused) {
-      const timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(async () => {
         console.log('Auto-stopping recording after 4 seconds grace period');
-        stopRecording();
+        try {
+          await stopRecording();
+        } catch (error) {
+          console.error('Auto-stop recording failed:', error);
+        }
       }, 4000);
       setAutoStopTimeout(timeoutId);
     }
-  }, [isRecording, isPaused, stopRecording]);
+  }, [isRecording, isPaused, stopRecording, autoStopTimeout]);
 
   // finishPractice를 먼저 정의 (호이스팅 문제 해결)
   const finishPractice = useCallback(async () => {
