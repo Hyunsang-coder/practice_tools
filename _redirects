@@ -1,0 +1,12 @@
+# Cloudflare Pages Redirects Configuration
+# SPA(Single Page Application) 라우팅 지원
+
+# Redirect all routes to index.html for client-side routing
+/*    /index.html   200
+
+# API redirects (if needed in future)
+# /api/*  https://your-api-endpoint.com/:splat  200
+
+# Security redirects
+# Force HTTPS (Cloudflare handles this automatically, but keeping for reference)
+# http://your-domain.com/*  https://your-domain.com/:splat  301!

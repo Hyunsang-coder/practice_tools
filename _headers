@@ -1,0 +1,29 @@
+# Cloudflare Pages Headers Configuration
+# 보안 및 성능 최적화
+
+/*
+  # Security Headers
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  
+  # Performance Headers
+  Cache-Control: public, max-age=31536000, immutable
+  
+  # CORS for API calls (if needed)
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, Authorization
+
+# Static assets caching
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML files - shorter cache
+/*.html
+  Cache-Control: public, max-age=3600
+
+# Service worker
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate

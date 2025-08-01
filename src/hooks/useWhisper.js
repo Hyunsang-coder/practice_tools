@@ -10,16 +10,40 @@ const useWhisper = () => {
     setTranscription(null);
     setError(null);
 
+    // Environment-aware API key handling
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!apiKey || apiKey === 'YOUR_DUMMY_API_KEY_HERE') {
-      console.error('OpenAI API key is not set in .env file.');
-      setError('OpenAI API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.');
+    const isDevelopment = import.meta.env.DEV;
+    const isProduction = import.meta.env.PROD;
+    
+    // API key validation
+    const isValidApiKey = apiKey && 
+                         apiKey !== 'YOUR_DUMMY_API_KEY_HERE' && 
+                         apiKey.startsWith('sk-') && 
+                         apiKey.length > 20;
+    
+    if (!isValidApiKey) {
+      console.warn('OpenAI API key not configured or invalid');
+      
+      const errorMessage = isDevelopment 
+        ? 'OpenAI API 키가 설정되지 않았습니다. (.env 파일 확인)'
+        : 'OpenAI API 키가 설정되지 않았습니다. (관리자에게 문의)';
+      
+      setError(errorMessage);
       setIsTranscribing(false);
-      // Simulate a delay and return dummy data for UI development
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setTranscription('OpenAI API 키가 설정되지 않아 더미 텍스트를 반환합니다.');
-      return 'OpenAI API 키가 설정되지 않아 더미 텍스트를 반환합니다.';
+      
+      // Development: Return dummy data for UI testing
+      if (isDevelopment) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const dummyText = '더미 전사 텍스트: 안녕하세요, 이것은 API 키 없이 동작하는 더미 데이터입니다.';
+        setTranscription(dummyText);
+        return dummyText;
+      }
+      
+      // Production: Show error
+      return null;
     }
+    
+    console.log(`Using OpenAI API in ${isProduction ? 'production' : 'development'} mode`);
 
     const formData = new FormData();
     formData.append('file', audioBlob, 'recording.mp3');
