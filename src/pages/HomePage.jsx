@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import EnvDebugger from '../components/EnvDebugger';
 import './HomePage.css';
 
 function HomePage() {
@@ -77,6 +78,7 @@ function HomePage() {
           </div>
         </div>
       </footer>
+      <EnvDebugger />
     </div>
   );
 }
