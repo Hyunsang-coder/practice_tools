@@ -127,6 +127,18 @@
   transform: translateY(-2px);
 }
 
+.mode-button.disabled {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.mode-button.disabled:hover {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  transform: none;
+}
+
 .features-section {
   text-align: center;
   max-width: 1000px;
@@ -171,15 +183,15 @@
   .main-title {
     font-size: 2.5rem;
   }
-  
+
   .mode-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .feature-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .home-page {
     padding: 1rem;
   }

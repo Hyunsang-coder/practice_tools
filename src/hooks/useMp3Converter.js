@@ -29,45 +29,22 @@ const useMp3Converter = () => {
         vbrQuality: 2, // Good quality (0-9, lower = better quality)
       });
 
-      // Process audio in chunks for progress tracking
-      const chunkSize = 1024;
-      const totalSamples = audioBuffer.length;
-      const mp3Data = [];
-      
-      for (let i = 0; i < totalSamples; i += chunkSize) {
-        const end = Math.min(i + chunkSize, totalSamples);
-        const chunk = [];
-        
-        // Extract samples for each channel
-        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-          const channelData = audioBuffer.getChannelData(channel);
-          chunk.push(channelData.slice(i, end));
-        }
-        
-        // Encode chunk
-        const encodedData = encoder.encode(chunk);
-        if (encodedData.length > 0) {
-          mp3Data.push(encodedData);
-        }
-        
-        // Update progress (reserve 10% for finalization)
-        const progress = Math.round((end / totalSamples) * 90);
-        setConversionProgress(progress);
-        
-        // Allow UI to update
-        await new Promise(resolve => setTimeout(resolve, 0));
+      setConversionProgress(50); // Set progress to 50% after setup
+
+      // Extract all channel data at once
+      const pcmChannels = [];
+      for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+        pcmChannels.push(audioBuffer.getChannelData(i));
       }
-      
-      // Finalize encoding
+
+      // Encode the entire audio at once
+      const encodedData = encoder.encode(pcmChannels);
       const finalData = encoder.finalize();
-      if (finalData.length > 0) {
-        mp3Data.push(finalData);
-      }
-      
+
+      // Combine encoded data and final data
+      const mp3Blob = new Blob([encodedData, finalData], { type: 'audio/mp3' });
+
       setConversionProgress(100);
-      
-      // Create MP3 blob
-      const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
       
       setIsConverting(false);
       return mp3Blob;

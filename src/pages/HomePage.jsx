@@ -50,10 +50,10 @@ function HomePage() {
               <li>실시간 녹음 및 비교</li>
             </ul>
             <button
-              className="mode-button simultaneous-button"
-              onClick={() => navigate('/simultaneous')}
+              className="mode-button simultaneous-button disabled"
+              disabled={true}
             >
-              동시통역 모드 시작하기
+              Coming up soon
             </button>
           </div>
         </div>
