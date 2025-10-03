@@ -3,19 +3,19 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 // Browser compatibility check utility
 const checkBrowserSupport = () => {
   const issues = [];
-  
+
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     issues.push('Microphone access not supported');
   }
-  
+
   if (!window.MediaRecorder) {
     issues.push('Audio recording not supported');
   }
-  
+
   // Check for specific MIME type support
   const supportedTypes = [];
   const typesToTest = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
-  
+
   if (window.MediaRecorder) {
     typesToTest.forEach(type => {
       if (MediaRecorder.isTypeSupported(type)) {
@@ -23,11 +23,11 @@ const checkBrowserSupport = () => {
       }
     });
   }
-  
+
   if (supportedTypes.length === 0 && window.MediaRecorder) {
     issues.push('No supported audio formats found');
   }
-  
+
   return {
     isSupported: issues.length === 0,
     issues,
@@ -51,7 +51,7 @@ const useRecorder = () => {
   const startRecording = useCallback(async () => {
     try {
       setError(null);
-      
+
       // Check browser support before attempting to record
       if (!browserSupport.isSupported) {
         const errorMessage = `Recording not supported: ${browserSupport.issues.join(', ')}`;
@@ -68,7 +68,7 @@ const useRecorder = () => {
           sampleRate: 16000 // Optimal for Whisper
         }
       };
-      
+
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -86,10 +86,10 @@ const useRecorder = () => {
       if (browserSupport.supportedTypes.length > 0) {
         // Prefer webm, then mp4, then others
         const preferredOrder = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
-        mimeType = preferredOrder.find(type => browserSupport.supportedTypes.includes(type)) 
-                  || browserSupport.supportedTypes[0];
+        mimeType = preferredOrder.find(type => browserSupport.supportedTypes.includes(type))
+          || browserSupport.supportedTypes[0];
       }
-      
+
       // Create MediaRecorder with error handling
       let mediaRecorder;
       try {
@@ -154,7 +154,7 @@ const useRecorder = () => {
 
       // Provide specific error messages based on error type
       let errorMessage = '마이크 접근 권한이 필요합니다.';
-      
+
       if (err.name === 'NotAllowedError') {
         errorMessage = '마이크 접근이 차단되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.';
       } else if (err.name === 'NotFoundError') {
@@ -164,15 +164,15 @@ const useRecorder = () => {
       } else if (err.name === 'NotReadableError') {
         errorMessage = '마이크를 사용할 수 없습니다. 다른 앱에서 사용 중일 수 있습니다.';
       }
-      
+
       setError(errorMessage);
     }
   }, [browserSupport]);
 
   const pauseRecording = useCallback(() => {
-    if (mediaRecorderRef.current && 
-        mediaRecorderRef.current.state === 'recording' && 
-        isRecording && !isPaused) {
+    if (mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === 'recording' &&
+      isRecording && !isPaused) {
       try {
         mediaRecorderRef.current.pause();
         setIsPaused(true);
@@ -190,9 +190,9 @@ const useRecorder = () => {
   }, [isRecording, isPaused]);
 
   const resumeRecording = useCallback(() => {
-    if (mediaRecorderRef.current && 
-        mediaRecorderRef.current.state === 'paused' && 
-        isRecording && isPaused) {
+    if (mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === 'paused' &&
+      isRecording && isPaused) {
       try {
         mediaRecorderRef.current.resume();
         setIsPaused(false);
@@ -211,13 +211,16 @@ const useRecorder = () => {
   const stopRecording = useCallback(() => {
     return new Promise((resolve) => {
       if (mediaRecorderRef.current && isRecording) {
-        // Create audio blob immediately to avoid race conditions
-        const audioBlob = new Blob(audioChunksRef.current, { 
-          type: mediaRecorderRef.current.mimeType || 'audio/webm' 
-        });
+        // Store mimeType before stopping
+        const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
 
         // Set up onstop handler to ensure proper cleanup sequence
         mediaRecorderRef.current.onstop = () => {
+          // Create audio blob AFTER receiving all data chunks
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: mimeType
+          });
+
           // Use requestAnimationFrame to ensure DOM updates complete
           requestAnimationFrame(() => {
             // Clean up media stream
@@ -238,7 +241,7 @@ const useRecorder = () => {
 
             // Set audio data and resolve with same blob to ensure consistency
             setAudioData(audioBlob);
-            
+
             // Use setTimeout to ensure React state updates complete before resolving
             setTimeout(() => {
               resolve(audioBlob);
@@ -249,7 +252,11 @@ const useRecorder = () => {
         // Handle error case
         mediaRecorderRef.current.onerror = (error) => {
           console.error('MediaRecorder stop error:', error);
-          resolve(audioBlob); // Still resolve with the blob we have
+          // Create blob with whatever chunks we have
+          const errorBlob = new Blob(audioChunksRef.current, {
+            type: mimeType
+          });
+          resolve(errorBlob); // Still resolve with the blob we have
         };
 
         mediaRecorderRef.current.stop();
@@ -271,7 +278,7 @@ const useRecorder = () => {
       }
       audioUrlRef.current = null;
     }
-    
+
     setAudioData(null);
     setRecordingTime(0);
     setError(null);
@@ -291,7 +298,7 @@ const useRecorder = () => {
           }
           audioUrlRef.current = null;
         }
-        
+
         // Validate blob before creating URL
         if (audioData instanceof Blob && audioData.size > 0) {
           audioUrlRef.current = URL.createObjectURL(audioData);
@@ -333,7 +340,7 @@ const useRecorder = () => {
           console.warn('Failed to stop MediaRecorder during cleanup:', error);
         }
       }
-      
+
       // Clean up media stream
       if (streamRef.current) {
         try {
@@ -343,13 +350,13 @@ const useRecorder = () => {
         }
         streamRef.current = null;
       }
-      
+
       // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      
+
       // Clean up URL object
       if (audioUrlRef.current) {
         try {

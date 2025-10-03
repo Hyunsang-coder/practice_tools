@@ -11,6 +11,16 @@ const RollingText = React.memo(({ text, speed, isPlaying, onComplete, onProgress
   const [words, setWords] = useState([]);
   const intervalRef = useRef(null);
   const textContentRef = useRef(null);
+  const previousProgressRef = useRef(-1);
+  const onProgressRef = useRef(onProgress);
+  const onCompleteRef = useRef(onComplete);
+  const hasCompletedRef = useRef(false);
+
+  // 콜백 ref 업데이트
+  useEffect(() => {
+    onProgressRef.current = onProgress;
+    onCompleteRef.current = onComplete;
+  }, [onProgress, onComplete]);
 
   // 기본 설정값
   const {
@@ -25,6 +35,8 @@ const RollingText = React.memo(({ text, speed, isPlaying, onComplete, onProgress
       const wordArray = text.split(/\s+/).filter(word => word.length > 0);
       setWords(wordArray);
       setCurrentIndex(0);
+      hasCompletedRef.current = false; // 리셋 시 완료 상태도 리셋
+      previousProgressRef.current = -1; // 진행률도 리셋
     }
   }, [text]);
 
@@ -86,25 +98,33 @@ const RollingText = React.memo(({ text, speed, isPlaying, onComplete, onProgress
 
     if (currentIndex >= words.length) {
       // 100% 달성 후 완료 처리
-      if (onProgress) {
-        onProgress(100);
+      if (previousProgressRef.current !== 100) {
+        previousProgressRef.current = 100;
+        if (onProgressRef.current) {
+          onProgressRef.current(100);
+        }
       }
-      if (onComplete) {
-        onComplete();
+      // onComplete는 한 번만 호출
+      if (!hasCompletedRef.current && onCompleteRef.current) {
+        hasCompletedRef.current = true;
+        onCompleteRef.current();
       }
     } else {
       // 진행률 계산: 마지막 단어에서 100%가 되도록 조정
       const progress = Math.round(Math.min(100, (currentIndex / Math.max(1, words.length - 1)) * 100));
-      if (onProgress) {
-        onProgress(progress);
+      if (progress !== previousProgressRef.current) {
+        previousProgressRef.current = progress;
+        if (onProgressRef.current) {
+          onProgressRef.current(progress);
+        }
       }
     }
-  }, [currentIndex, words.length, onComplete, onProgress]);
+  }, [currentIndex, words.length]);
 
   // Memoize highlighted text to prevent unnecessary re-renders
   const highlightedText = useMemo(() => {
     if (words.length === 0) return null;
-    
+
     // 현재 단어를 중앙에 배치하는 윈도우 방식
     const halfWindow = Math.floor(windowSize / 2);
     let startIndex = Math.max(0, currentIndex - halfWindow);
@@ -202,9 +222,9 @@ function PracticePage() {
 
   // Memoize displaySettings to prevent unnecessary RollingText re-renders
   const displaySettings = useMemo(() => displaySettingsState, [
-    displaySettingsState.windowSize, 
-    displaySettingsState.fontSize, 
-    displaySettingsState.textColor, 
+    displaySettingsState.windowSize,
+    displaySettingsState.fontSize,
+    displaySettingsState.textColor,
     displaySettingsState.highlightRange
   ]);
 
@@ -229,39 +249,43 @@ function PracticePage() {
   const setIsPlaying = useCallback((value) => {
     setPlaybackState(prev => ({ ...prev, isPlaying: value }));
   }, []);
-  
+
   const setIsCompleted = useCallback((value) => {
     setPlaybackState(prev => ({ ...prev, isCompleted: value }));
   }, []);
-  
+
   const setProgress = useCallback((value) => {
-    setPlaybackState(prev => ({ ...prev, progress: value }));
+    setPlaybackState(prev => {
+      // 동일한 값이면 업데이트하지 않음
+      if (prev.progress === value) return prev;
+      return { ...prev, progress: value };
+    });
   }, []);
-  
+
   const setCurrentSpeed = useCallback((value) => {
     setPlaybackState(prev => ({ ...prev, currentSpeed: value }));
   }, []);
-  
+
   const setRestartKey = useCallback((value) => {
     setPlaybackState(prev => ({ ...prev, restartKey: value }));
   }, []);
-  
+
   const setMediaUrl = useCallback((value) => {
     setMediaState(prev => ({ ...prev, mediaUrl: value }));
   }, []);
-  
+
   const setEnableRecording = useCallback((value) => {
     setMediaState(prev => ({ ...prev, enableRecording: value }));
   }, []);
-  
+
   const setAutoStopTimeout = useCallback((value) => {
     setMediaState(prev => ({ ...prev, autoStopTimeout: value }));
   }, []);
-  
+
   const setShowConfirmDialog = useCallback((value) => {
     setUiState(prev => ({ ...prev, showConfirmDialog: value }));
   }, []);
-  
+
   const setShowDisplaySettings = useCallback((value) => {
     setUiState(prev => ({ ...prev, showDisplaySettings: value }));
   }, []);
@@ -375,7 +399,19 @@ function PracticePage() {
       setAutoStopTimeout(null);
     }
 
-    if (isRecording) {
+    // 롤링이 중단되었지만 녹음이 계속되고 있다면 7초 후 자동 종료
+    if (isRecording && !isPaused) {
+      const timeoutId = setTimeout(async () => {
+        console.log('Auto-stopping recording after 7 seconds (rolling stopped)');
+        try {
+          await stopRecording();
+        } catch (error) {
+          console.error('Auto-stop recording failed:', error);
+        }
+      }, 7000);
+      setAutoStopTimeout(timeoutId);
+    } else if (isRecording) {
+      // 이미 일시정지 상태라면 즉시 종료
       try {
         await stopRecording();
       } catch (error) {
@@ -383,7 +419,7 @@ function PracticePage() {
       }
     }
     setIsPlaying(false);
-  }, [isRecording, stopRecording, autoStopTimeout]);
+  }, [isRecording, isPaused, stopRecording, autoStopTimeout]);
 
   const handlePlayPause = useCallback(() => {
     if (isCompleted) {
@@ -434,16 +470,16 @@ function PracticePage() {
       setAutoStopTimeout(null);
     }
 
-    // 진행률 100% 달성 시 4초 후 자동으로 녹음 중지
+    // 진행률 100% 달성 시 7초 후 자동으로 녹음 중지
     if (isRecording && !isPaused) {
       const timeoutId = setTimeout(async () => {
-        console.log('Auto-stopping recording after 4 seconds grace period');
+        console.log('Auto-stopping recording after 7 seconds grace period');
         try {
           await stopRecording();
         } catch (error) {
           console.error('Auto-stop recording failed:', error);
         }
-      }, 4000);
+      }, 7000); // 7초로 변경
       setAutoStopTimeout(timeoutId);
     }
   }, [isRecording, isPaused, stopRecording, autoStopTimeout]);
@@ -501,10 +537,10 @@ function PracticePage() {
       navigate('/results', { state: resultsData });
     } catch (error) {
       console.error('Critical error in finishPractice:', error);
-      
+
       // 사용자에게 에러 알림
       alert('연습 완료 중 오류가 발생했습니다. 다시 시도해주세요.');
-      
+
       // 에러가 발생해도 최소한의 데이터로 결과 페이지로 이동
       try {
         const fallbackData = {
@@ -520,7 +556,7 @@ function PracticePage() {
           originalPracticeData: practiceData,
           hasError: true
         };
-        
+
         navigate('/results', { state: fallbackData });
       } catch (fallbackError) {
         console.error('Fallback navigation failed:', fallbackError);

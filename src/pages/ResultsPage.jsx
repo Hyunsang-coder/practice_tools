@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import JSZip from 'jszip';
 import useMp3Converter from '../hooks/useMp3Converter';
 import useWhisper from '../hooks/useWhisper';
 import ConversionProgressDialog from '../components/ConversionProgressDialog';
@@ -35,6 +34,8 @@ function ResultsPage() {
   const [transcriptionError, setTranscriptionError] = useState(null); // 전사 에러
   const [copySuccess, setCopySuccess] = useState(false); // 클립보드 복사 성공 상태
 
+  const copyTimeoutRef = useRef(null);
+
   // 평가 항목 체크박스 상태
   const [evaluationCriteria, setEvaluationCriteria] = useState({
     coverage: true,        // 커버리지
@@ -56,21 +57,27 @@ function ResultsPage() {
     try {
       // MP3 변환이 필요하다면 변환부터 수행
       let audioBlob = resultsData.audioData;
+      let audioFileName = 'recording.webm'; // 기본 파일명
+
       if (audioBlob.type !== 'audio/mp3') {
         setShowConversionDialog(true);
         try {
           const mp3Blob = await convertToMp3(audioBlob);
-          if (mp3Blob) {
+          if (mp3Blob && mp3Blob.type === 'audio/mp3') {
             audioBlob = mp3Blob;
+            audioFileName = 'recording.mp3';
           } else {
-            throw new Error('MP3 변환에 실패했습니다.');
+            console.warn('MP3 변환 실패, 원본 WebM 형식 사용');
+            // 원본 형식 유지
           }
         } finally {
           setShowConversionDialog(false);
         }
+      } else {
+        audioFileName = 'recording.mp3';
       }
 
-      const transcribedTextResult = await transcribe(audioBlob);
+      const transcribedTextResult = await transcribe(audioBlob, audioFileName);
       if (transcribedTextResult) {
         setTranscribedText(transcribedTextResult);
       }
@@ -87,6 +94,15 @@ function ResultsPage() {
       setTranscribedText(transcription);
     }
   }, [transcription]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (whisperError) {
@@ -213,7 +229,17 @@ ${transcribedText || '전사된 텍스트가 없습니다. 먼저 "전사하기"
 
       // 성공 피드백 표시
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000); // 2초 후 상태 리셋
+
+      // 기존 타이머 클리어
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+
+      // 새 타이머 설정
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopySuccess(false);
+        copyTimeoutRef.current = null;
+      }, 2000); // 2초 후 상태 리셋
 
     } catch (error) {
       console.error('Clipboard copy error:', error);
@@ -236,7 +262,7 @@ ${transcribedText || '전사된 텍스트가 없습니다. 먼저 "전사하기"
 
       try {
         const mp3Blob = await convertToMp3(resultsData.audioData);
-        if (mp3Blob) {
+        if (mp3Blob && mp3Blob.type === 'audio/mp3') {
           finalAudioData = mp3Blob;
           audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.mp3`;
         }
