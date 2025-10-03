@@ -144,10 +144,12 @@ const RollingText = React.memo(({ text, speed, isPlaying, onComplete, onProgress
   }, [words, currentIndex, windowSize, fontSize, textColor, highlightRange]);
 
   // Memoize progress calculation - Fix React Hooks Rule violation
-  const progressPercentage = useMemo(() => 
-    Math.round((currentIndex / words.length) * 100), 
-    [currentIndex, words.length]
-  );
+  const progressPercentage = useMemo(() => {
+    if (words.length === 0) {
+      return 0;
+    }
+    return Math.round((currentIndex / words.length) * 100);
+  }, [currentIndex, words.length]);
 
   return (
     <div className={styles.rollingText}>

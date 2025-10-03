@@ -141,7 +141,17 @@ const useRecorder = () => {
 
     } catch (err) {
       console.error('Error starting recording:', err);
-      
+
+      // Ensure we release any active media stream to avoid leaking the microphone
+      if (streamRef.current) {
+        try {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        } catch (stopError) {
+          console.warn('Failed to stop media tracks after start failure:', stopError);
+        }
+        streamRef.current = null;
+      }
+
       // Provide specific error messages based on error type
       let errorMessage = '마이크 접근 권한이 필요합니다.';
       

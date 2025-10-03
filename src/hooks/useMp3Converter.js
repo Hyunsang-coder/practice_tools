@@ -4,20 +4,16 @@ const useMp3Converter = () => {
   const [isConverting, setIsConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState(0);
   const [error, setError] = useState(null);
-  const [isSupported, setIsSupported] = useState(null);
-
-  // Check browser support on first use
-  const checkSupport = useCallback(() => {
-    if (isSupported !== null) return isSupported;
-    
-    const hasWebAudio = !!(window.AudioContext || window.webkitAudioContext);
+  const [isSupported, setIsSupported] = useState(() => {
+    const hasWebAudio = !!(typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext));
     const hasWebAssembly = typeof WebAssembly !== 'undefined';
     const hasArrayBuffer = typeof ArrayBuffer !== 'undefined';
-    
-    const supported = hasWebAudio && hasWebAssembly && hasArrayBuffer;
-    setIsSupported(supported);
-    return supported;
-  }, [isSupported]);
+
+    return hasWebAudio && hasWebAssembly && hasArrayBuffer;
+  });
+
+  // Check browser support on first use
+  const checkSupport = useCallback(() => isSupported, [isSupported]);
 
   const convertToMp3 = useCallback(async (audioBlob) => {
     setIsConverting(true);
@@ -31,6 +27,7 @@ const useMp3Converter = () => {
       return audioBlob; // Return original blob as fallback
     }
 
+    let audioContext;
     try {
       // Dynamic import to reduce bundle size with timeout
       const importPromise = import('wasm-media-encoders');
@@ -49,8 +46,9 @@ const useMp3Converter = () => {
         throw new Error('Web Audio API not supported');
       }
       
+      audioContext = new AudioContextClass();
+
       // Decode audio data using Web Audio API with error handling
-      const audioContext = new AudioContextClass();
       let audioBuffer;
       try {
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
@@ -90,8 +88,6 @@ const useMp3Converter = () => {
       const mp3Blob = new Blob([encodedData, finalData], { type: 'audio/mp3' });
 
       setConversionProgress(100);
-      
-      setIsConverting(false);
       return mp3Blob;
       
     } catch (err) {
@@ -100,19 +96,27 @@ const useMp3Converter = () => {
       // Provide graceful fallback with original audio
       let errorMessage = 'MP3 변환 중 오류가 발생했습니다. 원본 오디오 파일을 사용합니다.';
       
-      if (err.message.includes('Import timeout')) {
+      if (err.message?.includes('Import timeout')) {
         errorMessage = 'MP3 변환 라이브러리 로딩 시간이 초과되었습니다. 원본 오디오 파일을 사용합니다.';
-      } else if (err.message.includes('Web Audio API')) {
+      } else if (err.message?.includes('Web Audio API')) {
         errorMessage = '현재 브라우저는 고급 오디오 처리를 지원하지 않습니다. 원본 오디오 파일을 사용합니다.';
-      } else if (err.message.includes('WASM')) {
+      } else if (err.message?.includes('WASM')) {
         errorMessage = '현재 브라우저는 WebAssembly를 지원하지 않습니다. 원본 오디오 파일을 사용합니다.';
       }
       
       setError(errorMessage);
-      setIsConverting(false);
-      
+
       // Return original blob as fallback instead of null
       return audioBlob;
+    } finally {
+      if (audioContext) {
+        try {
+          await audioContext.close();
+        } catch (closeError) {
+          console.warn('AudioContext close failed:', closeError);
+        }
+      }
+      setIsConverting(false);
     }
   }, [checkSupport]);
 
@@ -129,7 +133,7 @@ const useMp3Converter = () => {
     error,
     resetConverter,
     checkSupport,
-    isSupported: isSupported !== null ? isSupported : checkSupport()
+    isSupported
   };
 };
 

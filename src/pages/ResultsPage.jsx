@@ -58,12 +58,15 @@ function ResultsPage() {
       let audioBlob = resultsData.audioData;
       if (audioBlob.type !== 'audio/mp3') {
         setShowConversionDialog(true);
-        const mp3Blob = await convertToMp3(audioBlob);
-        setShowConversionDialog(false);
-        if (mp3Blob) {
-          audioBlob = mp3Blob;
-        } else {
-          throw new Error('MP3 변환에 실패했습니다.');
+        try {
+          const mp3Blob = await convertToMp3(audioBlob);
+          if (mp3Blob) {
+            audioBlob = mp3Blob;
+          } else {
+            throw new Error('MP3 변환에 실패했습니다.');
+          }
+        } finally {
+          setShowConversionDialog(false);
         }
       }
 
@@ -99,6 +102,19 @@ function ResultsPage() {
       setTranscriptionError(null);
     };
   }, [resultsData]);
+
+  useEffect(() => {
+    const audioUrl = resultsData?.audioUrl;
+    if (!audioUrl) return undefined;
+
+    return () => {
+      try {
+        URL.revokeObjectURL(audioUrl);
+      } catch (error) {
+        console.warn('Audio URL revocation failed:', error);
+      }
+    };
+  }, [resultsData?.audioUrl]);
 
   // 평가지 내용 생성 함수
   const generateEvaluationContent = useCallback(() => {
@@ -410,7 +426,8 @@ ${transcribedText || '전사된 텍스트가 없습니다. 먼저 "전사하기"
             </div>
             {!transcribedText && (
               <p className="download-notice">
-                평가지를 사용하려면 먼저 "전사하기" 버튼을 클릭해주세요.
+                평가지를 사용하려면 먼저 "전사하기" 버튼을 클릭해주세요.<br />
+                평가지 내용을 ChatGPT에 입력하면 문장 구역에 대한 평가를 받을 수 있습니다.
               </p>
             )}
           </div>
