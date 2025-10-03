@@ -706,28 +706,239 @@
   box-sizing: border-box;
 }
 
+/* 체크박스 기반 평가 항목 */
+.criteria-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.criteria-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-background-light);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.criteria-checkbox:hover {
+  background: var(--color-background-medium);
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.criteria-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-checkmark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  position: relative;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  background: var(--color-background-white);
+}
+
+.criteria-checkbox input[type="checkbox"]:checked+.checkbox-checkmark {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.criteria-checkbox input[type="checkbox"]:checked+.checkbox-checkmark::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.criteria-info {
+  flex: 1;
+}
+
+.criteria-label {
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin-bottom: 0.25rem;
+  font-size: var(--font-size-base);
+}
+
+.criteria-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+/* 평가지 다운로드 섹션 */
+.evaluation-download-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border-light);
+  text-align: center;
+}
+
+.evaluation-buttons-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.evaluation-download-button {
+  background: linear-gradient(135deg, var(--color-accent-green), var(--color-accent-green-dark));
+  color: var(--color-text-white);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  box-shadow: var(--shadow-md);
+}
+
+.evaluation-download-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-accent-green-dark), var(--color-accent-green-darker));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.evaluation-download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, var(--color-text-placeholder), var(--color-text-light));
+}
+
+.evaluation-download-button:disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
+.evaluation-copy-button {
+  background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-blue-dark));
+  color: var(--color-text-white);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  box-shadow: var(--shadow-md);
+}
+
+.evaluation-copy-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-accent-blue-dark), var(--color-accent-blue-darker));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.evaluation-copy-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, var(--color-text-placeholder), var(--color-text-light));
+}
+
+.evaluation-copy-button:disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
+.evaluation-copy-button.copy-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  animation: copySuccess 0.3s ease;
+}
+
+@keyframes copySuccess {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.download-notice {
+  margin-top: 0.75rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .evaluation-buttons-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .evaluation-download-button,
+  .evaluation-copy-button {
+    min-width: 200px;
+  }
+}
+
+/* 오디오 다운로드 섹션 */
+.audio-download-section {
+  margin-top: 1rem;
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.audio-download-button {
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-dark));
+  color: var(--color-text-white);
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  box-shadow: var(--shadow-md);
+}
+
+.audio-download-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-secondary-dark), var(--color-secondary-darker));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.audio-download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, var(--color-text-placeholder), var(--color-text-light));
+}
+
+.audio-download-button:disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
 @media (max-width: 900px) {
-  .text-comparison-section {
+  .criteria-checkboxes {
     grid-template-columns: 1fr;
   }
 
-  .text-content {
-    max-height: 300px;
-  }
-
-  .fixed-criteria {
-    flex-direction: column;
-  }
-
-  .criterion-item {
-    min-width: auto;
-  }
-
-  .detail-options {
-    flex-direction: column;
-  }
-
-  .detail-radio {
+  .criteria-checkbox {
     min-width: auto;
   }
 }

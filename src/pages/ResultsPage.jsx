@@ -13,8 +13,6 @@ function ResultsPage() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [showConversionDialog, setShowConversionDialog] = useState(false);
-  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
-  const dropdownRef = useRef(null);
 
   // MP3 변환 훅
   const {
@@ -33,10 +31,19 @@ function ResultsPage() {
     error: whisperError,
   } = useWhisper();
 
-  const [additionalContext, setAdditionalContext] = useState(''); // Glossary/맥락
-  const [evaluationDetail, setEvaluationDetail] = useState('brief'); // 평가 상세도
   const [transcribedText, setTranscribedText] = useState(''); // 전사된 텍스트
   const [transcriptionError, setTranscriptionError] = useState(null); // 전사 에러
+  const [copySuccess, setCopySuccess] = useState(false); // 클립보드 복사 성공 상태
+
+  // 평가 항목 체크박스 상태
+  const [evaluationCriteria, setEvaluationCriteria] = useState({
+    coverage: true,        // 커버리지
+    terminology: true,     // 용어 정확도
+    segmentation: true,    // 분절
+    fluency: true,         // 유창성
+    style: true,           // 문체
+    accuracy: true         // 정확성
+  });
 
 
   // Whisper AI 전사 요청 핸들러
@@ -93,124 +100,110 @@ function ResultsPage() {
     };
   }, [resultsData]);
 
-  // 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDownloadDropdown(false);
+  // 평가지 내용 생성 함수
+  const generateEvaluationContent = useCallback(() => {
+    if (!resultsData) return '';
+
+    const { originalText, practiceSettings, mode } = resultsData;
+
+    // 체크된 평가 항목들만 선택
+    const selectedCriteria = [];
+    const criteriaMap = {
+      coverage: '커버리지',
+      terminology: '용어 정확도',
+      segmentation: '분절',
+      fluency: '유창성',
+      style: '문체',
+      accuracy: '정확성'
+    };
+
+    Object.entries(evaluationCriteria).forEach(([key, checked]) => {
+      if (checked) {
+        selectedCriteria.push(criteriaMap[key]);
       }
-    };
+    });
 
-    if (showDownloadDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    // 선택된 항목이 없으면 기본값 설정
+    const evaluationItems = selectedCriteria.length > 0
+      ? selectedCriteria.join(', ')
+      : '커버리지, 용어 정확도, 분절, 유창성, 문체, 정확성';
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDownloadDropdown]);
+    return `시스템 프롬프트: 너는 경험이 많은 통번역대학원 한영과 교수야. 문장 구역에 대해 다음 평가 항목에 대해 간략히 크리틱을 할거야.
+평가 항목: ${evaluationItems}
 
-  // 평가 패키지 다운로드 기능
+=== 원문 ===
+${originalText || '원본 텍스트가 없습니다.'}
 
-  // 평가 패키지 다운로드 기능 (for future use)
-  // eslint-disable-next-line no-unused-vars
-  const downloadEvaluationPackage = useCallback(async () => {
-    if (!resultsData || !resultsData.audioData) return;
+=== 통역 내용 (Whisper 전사) ===
+${transcribedText || '전사된 텍스트가 없습니다. 먼저 "전사하기" 버튼을 클릭해주세요.'}
+
+`;
+  }, [resultsData, evaluationCriteria, transcribedText]);
+
+  // 평가지 다운로드 (새로운 시스템 프롬프트 형식)
+  const downloadEvaluationSheet = useCallback(async () => {
+    if (!resultsData) return;
 
     setIsExporting(true);
 
     try {
-      const { originalText, practiceSettings, mode } = resultsData;
+      const evaluationContent = generateEvaluationContent();
 
-      // MP3 변환 수행
-      let finalAudioData = resultsData.audioData;
-      let audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.webm`;
-
-      if (resultsData.audioData) {
-        setShowConversionDialog(true);
-
-        try {
-          const mp3Blob = await convertToMp3(resultsData.audioData);
-          if (mp3Blob) {
-            finalAudioData = mp3Blob;
-            audioFileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.mp3`;
-          }
-        } catch (err) {
-          console.error('MP3 conversion failed, using original format:', err);
-          // Continue with original audio if conversion fails
-        }
-
-        setShowConversionDialog(false);
-      }
-
-      // 고정된 평가 기준
-      const criteriaText = `- Accuracy & Coverage: 내용 전달의 정확성과 완성도
-- Delivery & Performance: 발표 속도, 유창함, 전달력  
-- Natural Language: 언어의 자연스러움과 적절성`;
-
-      const detailText = {
-        'brief': '간략한 전반적인 피드백',
-        'detailed': '구체적인 피드백과 개선 방향 제시',
-        'very-detailed': '문장 단위로 개선 제안 및 개선안 제시'
-      }[evaluationDetail];
-
-      const evaluationContent = `=== 통역 연습 평가 요청 ===
-연습 모드: ${mode === 'sight-translation' ? '문장 구역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
-날짜: ${new Date().toLocaleString('ko-KR')}
-${practiceSettings?.speed ? `속도: ${practiceSettings.speed} WPM` : ''}
-${practiceSettings?.duration ? `녹음 시간: ${practiceSettings.duration}` : ''}
-
-=== 원본 텍스트(한국어) ===
-${originalText || '원본 텍스트가 없습니다.'}
-
-=== 평가 요청 ===
-첨부된 녹음 파일을 들어보시고 다음 기준으로 평가해주세요:
-
-평가 기준:
-${criteriaText}
-
-평가 상세도: ${detailText}
-
-${additionalContext ? `Glossary/추가 맥락:\n${additionalContext}\n\n` : ''}각 항목별 점수와 구체적인 피드백을 부탁드립니다.
-
----
-Interpreter's Playground에서 생성됨
-${window.location.origin}
-`;
-
-      // 파일 이름 생성
+      // 텍스트 파일 생성 및 다운로드
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const textFileName = `evaluation_request_${timestamp}.txt`;
+      const textFileName = `evaluation_sheet_${timestamp}.txt`;
 
-      // ZIP 파일 생성 및 다운로드
-      const zip = new JSZip();
-
-      // 1. 평가 요청 텍스트 추가
-      zip.file(textFileName, evaluationContent);
-
-      // 2. 녹음 파일 추가 (MP3 변환된 파일 또는 원본)
-      zip.file(audioFileName, finalAudioData);
-
-      // ZIP 파일 생성 및 다운로드
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `claude_evaluation_package_${timestamp}.zip`;
-
-      const zipUrl = URL.createObjectURL(zipBlob);
-      const zipLink = document.createElement('a');
-      zipLink.href = zipUrl;
-      zipLink.download = zipFileName;
-      document.body.appendChild(zipLink);
-      zipLink.click();
-      document.body.removeChild(zipLink);
-      URL.revokeObjectURL(zipUrl);
+      const textBlob = new Blob([evaluationContent], { type: 'text/plain;charset=utf-8' });
+      const textUrl = URL.createObjectURL(textBlob);
+      const textLink = document.createElement('a');
+      textLink.href = textUrl;
+      textLink.download = textFileName;
+      document.body.appendChild(textLink);
+      textLink.click();
+      document.body.removeChild(textLink);
+      URL.revokeObjectURL(textUrl);
 
     } catch (error) {
-      console.error('Export error:', error);
-      alert('평가 패키지 다운로드 중 오류가 발생했습니다.');
+      console.error('Evaluation sheet download error:', error);
+      alert('평가지 다운로드 중 오류가 발생했습니다.');
     } finally {
       setIsExporting(false);
     }
-  }, [resultsData, evaluationDetail, additionalContext, convertToMp3]);
+  }, [resultsData, generateEvaluationContent]);
+
+  // 평가지 클립보드 복사
+  const copyEvaluationToClipboard = useCallback(async () => {
+    if (!resultsData || !transcribedText) return;
+
+    try {
+      const evaluationContent = generateEvaluationContent();
+
+      if (navigator.clipboard && window.isSecureContext) {
+        // 모던 브라우저에서 Clipboard API 사용
+        await navigator.clipboard.writeText(evaluationContent);
+      } else {
+        // 폴백: 임시 textarea 사용
+        const textArea = document.createElement('textarea');
+        textArea.value = evaluationContent;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+
+      // 성공 피드백 표시
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000); // 2초 후 상태 리셋
+
+    } catch (error) {
+      console.error('Clipboard copy error:', error);
+      alert('클립보드 복사 중 오류가 발생했습니다.');
+    }
+  }, [resultsData, transcribedText, generateEvaluationContent]);
 
   // 녹음 파일만 다운로드 (MP3 변환)
   const downloadAudioFile = useCallback(async () => {
@@ -256,77 +249,12 @@ ${window.location.origin}
     }
   }, [resultsData, convertToMp3]);
 
-  // 평가용 텍스트 다운로드
-  const downloadEvaluationText = useCallback(async () => {
-    if (!resultsData) return;
-
-    setIsExporting(true);
-
-    try {
-      const { originalText, practiceSettings, mode } = resultsData;
-
-      // 고정된 평가 기준
-      const criteriaText = `- Accuracy & Coverage: 내용 전달의 정확성과 완성도
-- Natural Language: 언어의 자연스러움과 적절성`;
-
-      const detailText = {
-        'brief': '간략한 전반적인 피드백',
-        'detailed': '구체적인 피드백과 개선 방향 제시',
-        'very-detailed': '문장 단위 피드백 및 개선안 제시'
-      }[evaluationDetail];
-
-      const evaluationContent = `=== 통역 연습 평가 요청 ===
-연습 모드: ${mode === 'sight-translation' ? '문장 구역 (Sight Translation)' : '동시통역 (Simultaneous Interpretation)'}
-날짜: ${new Date().toLocaleString('ko-KR')}
-${practiceSettings?.speed ? `속도: ${practiceSettings.speed} WPM` : ''}
-${practiceSettings?.duration ? `녹음 시간: ${practiceSettings.duration}` : ''}
-
-=== 원본 텍스트(한국어) ===
-${originalText || '원본 텍스트가 없습니다.'}
-
-=== 통역 텍스트 ===
-${transcribedText || '전사된 텍스트가 없습니다. 먼저 "전사하기" 버튼을 클릭해주세요.'}
-
-=== 평가 요청 ===
-위의 원본 텍스트와 통역 텍스트를 비교하여 다음 기준으로 평가해주세요:
-
-평가 기준:
-${criteriaText}
-
-평가 상세도: ${detailText}
-
-${additionalContext ? `Glossary/추가 맥락:\n${additionalContext}\n\n` : ''}각 항목별 점수와 구체적인 피드백을 부탁드립니다.
-
----
-Interpreter's Playground에서 생성됨
-${window.location.origin}
-`;
-
-      // 텍스트 파일 생성 및 다운로드
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const textFileName = `evaluation_request_${timestamp}.txt`;
-
-      const textBlob = new Blob([evaluationContent], { type: 'text/plain;charset=utf-8' });
-      const textUrl = URL.createObjectURL(textBlob);
-      const textLink = document.createElement('a');
-      textLink.href = textUrl;
-      textLink.download = textFileName;
-      document.body.appendChild(textLink);
-      textLink.click();
-      document.body.removeChild(textLink);
-      URL.revokeObjectURL(textUrl);
-
-    } catch (error) {
-      console.error('Text download error:', error);
-      alert('평가용 텍스트 다운로드 중 오류가 발생했습니다.');
-    } finally {
-      setIsExporting(false);
-    }
-  }, [resultsData, evaluationDetail, additionalContext, transcribedText]);
-
-  // 평가 상세도 변경 핸들러
-  const handleDetailChange = useCallback((detail) => {
-    setEvaluationDetail(detail);
+  // 평가 항목 체크박스 변경 핸들러
+  const handleCriteriaChange = useCallback((criteriaKey) => {
+    setEvaluationCriteria(prev => ({
+      ...prev,
+      [criteriaKey]: !prev[criteriaKey]
+    }));
   }, []);
 
   if (!resultsData) {
@@ -349,39 +277,6 @@ ${window.location.origin}
           </p>
         </div>
         <div className="header-actions">
-          <div className="download-dropdown-wrapper" ref={dropdownRef}>
-            <button
-              className={`download-button ${!resultsData?.audioData ? 'disabled' : ''}`}
-              onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
-              disabled={isExporting || isConverting || !resultsData?.audioData}
-            >
-              {isConverting ? 'MP3 변환 중...' : isExporting ? '다운로드 중...' : '📥 다운로드'}
-              <span className="dropdown-arrow">▼</span>
-            </button>
-
-            {showDownloadDropdown && !isExporting && !isConverting && resultsData?.audioData && (
-              <div className="download-dropdown-menu">
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    setShowDownloadDropdown(false);
-                    downloadAudioFile();
-                  }}
-                >
-                  🎵 녹음 파일 다운로드 (MP3)
-                </button>
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    setShowDownloadDropdown(false);
-                    downloadEvaluationText();
-                  }}
-                >
-                  📄 평가용 텍스트 다운로드
-                </button>
-              </div>
-            )}
-          </div>
           <button
             className="home-button"
             onClick={() => navigate('/')}
@@ -438,6 +333,17 @@ ${window.location.origin}
               <p className="no-audio-message">녹음 파일이 없습니다.</p>
             )}
           </div>
+
+          {/* 오디오 다운로드 버튼 */}
+          <div className="audio-download-section">
+            <button
+              className="audio-download-button"
+              onClick={downloadAudioFile}
+              disabled={isExporting || isConverting || !resultsData?.audioData}
+            >
+              {isConverting ? 'MP3 변환 중...' : isExporting ? '다운로드 중...' : '🎵 녹음 파일 다운로드 (MP3)'}
+            </button>
+          </div>
         </div>
 
         {/* 변환 오류 표시 */}
@@ -454,65 +360,59 @@ ${window.location.origin}
           </div>
         )}
 
-        {/* 평가 설정 커스터마이제이션 */}
+        {/* 평가 설정 */}
         <div className="evaluation-settings">
           <h3>⚙️ 평가 설정</h3>
 
           <div className="criteria-section">
-            <h4>📊 평가 기준 (고정)</h4>
-            <div className="fixed-criteria">
-              <div className="criterion-item">
-                <span className="criterion-icon">🎯</span>
-                <div className="criterion-content">
-                  <div className="criterion-title">Accuracy & Coverage</div>
-                  <div className="criterion-desc">내용 전달의 정확성과 완성도</div>
-                </div>
-              </div>
-              <div className="criterion-item">
-                <span className="criterion-icon">💬</span>
-                <div className="criterion-content">
-                  <div className="criterion-title">Natural Language</div>
-                  <div className="criterion-desc">언어의 자연스러움과 적절성</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="detail-section">
-            <h4>📋 평가 상세도</h4>
-            <div className="detail-options">
+            <h4>📊 평가 항목</h4>
+            <div className="criteria-checkboxes">
               {[
-                { key: 'brief', label: '간략한 피드백', desc: '전반적인 피드백과 핵심 포인트' },
-                { key: 'detailed', label: '상세한 피드백', desc: '구체적인 피드백과 개선안 제시' },
-                { key: 'very-detailed', label: '매우 상세한 피드백', desc: '문장 단위 피드백 및 대안 제시' }
-              ].map(detail => (
-                <label key={detail.key} className="detail-radio">
+                { key: 'coverage', label: '커버리지', desc: '내용 전달의 완성도' },
+                { key: 'terminology', label: '용어 정확도', desc: '전문 용어의 정확한 번역' },
+                { key: 'segmentation', label: '분절', desc: '적절한 문장 분할과 구성' },
+                { key: 'fluency', label: '유창성', desc: '자연스러운 발화와 흐름' },
+                { key: 'style', label: '문체', desc: '상황에 맞는 언어 사용' },
+                { key: 'accuracy', label: '정확성', desc: '의미 전달의 정확도' }
+              ].map(criterion => (
+                <label key={criterion.key} className="criteria-checkbox">
                   <input
-                    type="radio"
-                    name="evaluationDetail"
-                    value={detail.key}
-                    checked={evaluationDetail === detail.key}
-                    onChange={() => handleDetailChange(detail.key)}
+                    type="checkbox"
+                    checked={evaluationCriteria[criterion.key]}
+                    onChange={() => handleCriteriaChange(criterion.key)}
                   />
-                  <span className="radio-button"></span>
-                  <div className="detail-info">
-                    <div className="detail-label">{detail.label}</div>
-                    <div className="detail-desc">{detail.desc}</div>
+                  <span className="checkbox-checkmark"></span>
+                  <div className="criteria-info">
+                    <div className="criteria-label">{criterion.label}</div>
+                    <div className="criteria-desc">{criterion.desc}</div>
                   </div>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="additional-context">
-            <h4>📚 Glossary/추가 맥락</h4>
-            <textarea
-              className="context-textarea"
-              value={additionalContext}
-              onChange={(e) => setAdditionalContext(e.target.value)}
-              placeholder="용어 및 특별한 맥락 정보 등을 입력하세요."
-              rows={4}
-            />
+          <div className="evaluation-download-section">
+            <div className="evaluation-buttons-row">
+              <button
+                className="evaluation-download-button"
+                onClick={downloadEvaluationSheet}
+                disabled={isExporting || !transcribedText}
+              >
+                {isExporting ? '다운로드 중...' : '📋 평가지 다운로드'}
+              </button>
+              <button
+                className={`evaluation-copy-button ${copySuccess ? 'copy-success' : ''}`}
+                onClick={copyEvaluationToClipboard}
+                disabled={!transcribedText}
+              >
+                {copySuccess ? '✅ 복사됨!' : '📋 클립보드 복사'}
+              </button>
+            </div>
+            {!transcribedText && (
+              <p className="download-notice">
+                평가지를 사용하려면 먼저 "전사하기" 버튼을 클릭해주세요.
+              </p>
+            )}
           </div>
         </div>
 
