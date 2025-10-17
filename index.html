@@ -1,70 +1,126 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TD Tools - 리다이렉팅 중...</title>
-    
-    <!-- 즉시 리다이렉트 -->
-    <meta http-equiv="refresh" content="0; url=https://practice-tools-6mgkdcx2w-hyunsang-coders-projects.vercel.app">
-    
-    <!-- SEO 최적화 -->
-    <link rel="canonical" href="https://practice-tools-6mgkdcx2w-hyunsang-coders-projects.vercel.app">
-    <link rel="icon" type="image/png" href="/pubg_cat_s.png" />
-    
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
-        }
-        .container {
-            max-width: 500px;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        a { color: #ffd700; text-decoration: none; font-weight: bold; }
-        a:hover { text-decoration: underline; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TD Tools - 리다이렉팅 중...</title>
+
+  <!-- 즉시 리다이렉트 -->
+  <meta http-equiv="refresh" content="1; url=https://practice-tools-nine.vercel.app/">
+
+  <!-- SEO 최적화 -->
+  <link rel="canonical" href="https://practice-tools-nine.vercel.app/">
+  <meta name="description" content="통역 연습 도구 - TD Tools">
+  <meta name="keywords" content="통역, 연습, 도구, 시역, 동시통역, sight translation, simultaneous interpretation">
+  <link rel="icon" type="image/png" href="/pubg_cat_s.png" />
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 500px;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    a {
+      color: #ffd700;
+      text-decoration: none;
+      font-weight: bold;
+      border-bottom: 1px solid transparent;
+      transition: border-bottom 0.2s ease;
+    }
+
+    a:hover {
+      border-bottom: 1px solid #ffd700;
+    }
+
+    .countdown {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="spinner"></div>
-        <h1>🚀 TD Tools</h1>
-        <p>통역 연습 도구로 이동 중입니다...</p>
-        <p>자동으로 이동되지 않는다면 
-        <a href="https://practice-tools-6mgkdcx2w-hyunsang-coders-projects.vercel.app">여기를 클릭하세요</a></p>
-    </div>
-    
-    <script>
-        // 현재 경로 보존하여 리다이렉트
-        const currentHash = window.location.hash;
-        const vercelUrl = 'https://practice-tools-6mgkdcx2w-hyunsang-coders-projects.vercel.app';
-        
-        setTimeout(() => {
-            window.location.replace(vercelUrl + currentHash);
-        }, 500);
-    </script>
+  <div class="container">
+    <div class="spinner"></div>
+    <h1>🚀 TD Tools</h1>
+    <p>통역 연습 도구로 이동 중입니다...</p>
+    <div class="countdown" id="countdown"></div>
+    <p>자동으로 이동되지 않는다면
+      <a href="https://practice-tools-nine.vercel.app/" id="manual-link">여기를 클릭하세요</a>
+    </p>
+  </div>
+
+  <script>
+    const vercelUrl = 'https://practice-tools-nine.vercel.app/';
+
+    // 현재 경로(해시) 보존
+    const currentPath = window.location.hash || window.location.pathname;
+    const fullUrl = currentPath && currentPath !== '/' && currentPath !== '#/'
+      ? vercelUrl + currentPath
+      : vercelUrl;
+
+    // 수동 링크에도 경로 적용
+    document.getElementById('manual-link').href = fullUrl;
+
+    // 카운트다운 표시
+    let countdown = 3;
+    const countdownElement = document.getElementById('countdown');
+
+    const updateCountdown = () => {
+      if (countdown > 0) {
+        countdownElement.textContent = `${countdown}초 후 이동합니다...`;
+        countdown--;
+        setTimeout(updateCountdown, 1000);
+      } else {
+        countdownElement.textContent = '이동 중...';
+        // replace를 사용하여 뒤로가기 방지
+        window.location.replace(fullUrl);
+      }
+    };
+
+    updateCountdown();
+
+    // 즉시 리다이렉트를 원한다면 아래 주석 해제
+    // setTimeout(() => window.location.replace(fullUrl), 100);
+  </script>
 </body>
+
 </html>
